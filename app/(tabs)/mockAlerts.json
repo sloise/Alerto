@@ -1,0 +1,91 @@
+{
+  "earthquakes": [
+    {
+      "id": "eq_202604101",
+      "magnitude": 5.2,
+      "location": "Quezon City",
+      "latitude": 14.6349,
+      "longitude": 121.0388,
+      "depth": 12.5,
+      "timestamp": "2026-04-10T11:35:00Z"
+    },
+    {
+      "id": "eq_202604102",
+      "magnitude": 4.8,
+      "location": "Laguna Province",
+      "latitude": 14.3037,
+      "longitude": 121.6150,
+      "depth": 25.3,
+      "timestamp": "2026-04-10T10:15:00Z"
+    },
+    {
+      "id": "eq_202604103",
+      "magnitude": 3.8,
+      "location": "Cavite Province",
+      "latitude": 14.3467,
+      "longitude": 120.8954,
+      "depth": 18.7,
+      "timestamp": "2026-04-10T09:45:00Z"
+    }
+  ],
+  "weatherAlerts": [
+    {
+      "id": "flood_001",
+      "type": "flood",
+      "title": "Flood Alert - Marikina City",
+      "description": "Water levels rising rapidly in Marikina River. Residents in low-lying areas should evacuate immediately. The river is expected to breach critical thresholds within the next 2 hours.",
+      "severity": "warning",
+      "effective": "2026-04-10T11:35:00Z",
+      "location": "Marikina City, NCR",
+      "waterLevel": "17.5/18m",
+      "depth": "0.5m",
+      "status": "Active",
+      "riseRate": "0.5m / hour"
+    },
+    {
+      "id": "flood_002",
+      "type": "flood",
+      "title": "Flood Watch - Pasig City",
+      "description": "Potential flooding in low-lying areas due to heavy rainfall. Residents are advised to be on standby for possible evacuation.",
+      "severity": "watch",
+      "effective": "2026-04-10T10:00:00Z",
+      "location": "Pasig City, NCR",
+      "waterLevel": "15.8/18m",
+      "depth": "0.3m",
+      "status": "Monitoring",
+      "riseRate": "0.2m / hour"
+    },
+    {
+      "id": "typhoon_001",
+      "type": "typhoon",
+      "title": "Typhoon Alert - Northern Luzon",
+      "description": "Severe tropical cyclone approaching from the Pacific. Wind speeds of up to 120 kph expected. Prepare emergency supplies and secure outdoor items. Avoid unnecessary travel.",
+      "severity": "warning",
+      "effective": "2026-04-10T08:30:00Z",
+      "location": "Northern Luzon",
+      "windSpeed": "120 kph",
+      "movement": "WNW at 25 kph",
+      "status": "Active"
+    },
+    {
+      "id": "storm_001",
+      "type": "storm",
+      "title": "Thunderstorm Warning - Central Luzon",
+      "description": "Strong thunderstorm expected with heavy rainfall and lightning. Residents should stay indoors and avoid using electrical appliances.",
+      "severity": "watch",
+      "effective": "2026-04-10T13:00:00Z",
+      "location": "Central Luzon",
+      "status": "Expected"
+    },
+    {
+      "id": "heat_001",
+      "type": "heat",
+      "title": "Heat Advisory - Metro Manila",
+      "description": "Heat index may reach 40-42°C. Stay hydrated, avoid prolonged sun exposure, and check on elderly residents.",
+      "severity": "advisory",
+      "effective": "2026-04-10T09:00:00Z",
+      "location": "Metro Manila",
+      "status": "Active"
+    }
+  ]
+}

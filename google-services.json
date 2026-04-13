@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "374289377107",
+    "project_id": "alerto-app-85298",
+    "storage_bucket": "alerto-app-85298.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:374289377107:android:6905a1429e9955460623a6",
+        "android_client_info": {
+          "package_name": "com.keira.alerto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "374289377107-r10eqtmhou2fmphrargblbm2508tu324.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsn_RIBbU4eLuYpyE-QSG3z66B1jg60F8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "374289377107-r10eqtmhou2fmphrargblbm2508tu324.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "374289377107-rq20ehfs8ri0v5e0hrlfja2oqt3pj0sj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.keira.alerto"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
