@@ -19,6 +19,11 @@
     "android": {
       "package": "com.keira.alerto",
       "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyAjwhjTZ7tH_V9gri0LY9UlS023rklS3Hc"
+        }
+      },
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,8 +33,6 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
@@ -37,26 +40,26 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
-        }
-      ],
-      "expo-web-browser",
-      "expo-secure-store",
-      "expo-video",
-      "expo-audio",
-      "expo-speech-recognition"
-    ],
+"plugins": [
+  "expo-router",
+  [
+    "expo-splash-screen",
+    {
+      "image": "./assets/images/splash-icon.png",
+      "imageWidth": 200,
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff",
+      "dark": {
+        "backgroundColor": "#000000"
+      }
+    }
+  ],
+  "expo-web-browser",
+  "expo-secure-store",
+  "expo-video",
+  "expo-audio",
+  "expo-speech-recognition"
+],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

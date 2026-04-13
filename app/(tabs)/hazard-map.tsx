@@ -14,19 +14,18 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Text,
   View,
 } from "react-native";
 
 import MapView, { Marker, Polygon } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ScaledText } from "../ScaledText"; // 👈 ADD THIS IMPORT
+import { useAccessibility } from "../../components/AccessibilityContext";
 import { db } from "../../firebaseConfig";
 import { LocationContext } from "../_layout";
-import { useAccessibility } from "../../components/AccessibilityContext";
 
 const { width, height } = Dimensions.get("window");
 
-// Color system for professional consistency
 const COLORS = {
   primary: "#D62828",
   primaryDark: "#A02020",
@@ -64,7 +63,6 @@ type EvacuationCenter = {
   distance?: number;
 };
 
-// Hazard data with enhanced metadata
 const FLOOD_HAZARD_AREAS = [
   {
     id: "flood_mm",
@@ -146,7 +144,6 @@ const LIQUEFACTION_ZONES = [
   },
 ];
 
-// Utility function: Calculate distance between two coordinates
 function getDistance(
   lat1: number,
   lon1: number,
@@ -165,11 +162,8 @@ function getDistance(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ✅ SINGLE export default function — no duplicate
 export default function HazardMap() {
   const { latitude, longitude } = useContext(LocationContext);
-
-  // ✅ Location guard from AccessibilityContext
   const { isLocationEnabled } = useAccessibility();
 
   const hazardMapRef = useRef<MapView>(null);
@@ -189,20 +183,6 @@ export default function HazardMap() {
   const [visibleCityAliases, setVisibleCityAliases] = useState<string[]>([]);
   const geocodeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ✅ LOCATION DISABLED SCREEN — shown before any hooks that depend on location
-  if (!isLocationEnabled) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.locationDisabledContainer}>
-          <View style={styles.locationDisabledIconWrap}>
-            <MaterialIcons name="location-off" size={48} color="#C6C6C8" />
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Initialize with animations
   useEffect(() => {
     const animations = [
       Animated.timing(fadeAnim, {
@@ -220,7 +200,6 @@ export default function HazardMap() {
     loadCenters();
   }, []);
 
-  // Modal animation
   useEffect(() => {
     if (infoModal || directionsModal) {
       Animated.spring(modalScaleAnim, {
@@ -237,6 +216,12 @@ export default function HazardMap() {
       }).start();
     }
   }, [infoModal, directionsModal]);
+
+  useEffect(() => {
+    if (latitude && longitude) {
+      reverseGeocode(latitude, longitude);
+    }
+  }, [latitude, longitude]);
 
   async function reverseGeocode(lat: number, lng: number) {
     try {
@@ -288,14 +273,6 @@ export default function HazardMap() {
     }, 600);
   }
 
-  // Set initial city from user location
-  useEffect(() => {
-    if (latitude && longitude) {
-      reverseGeocode(latitude, longitude);
-    }
-  }, [latitude, longitude]);
-
-  // Centers filtered to the currently visible city using all aliases
   const visibleCenters =
     visibleCityAliases.length > 0
       ? centers.filter((c) => {
@@ -373,16 +350,33 @@ export default function HazardMap() {
     longitudeDelta: 0.15,
   };
 
+  // Early return AFTER all hooks
+  if (!isLocationEnabled) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.locationDisabledContainer}>
+          <View style={styles.locationDisabledIconWrap}>
+            <MaterialIcons name="location-off" size={48} color="#C6C6C8" />
+          </View>
+          <ScaledText variant="h3" style={styles.locationDisabledTitle}>Location Disabled</ScaledText>
+          <ScaledText variant="body" style={styles.locationDisabledBody}>
+            Enable Location Services in your Profile settings to view the hazard map and nearby evacuation centers.
+          </ScaledText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-        {/* Enhanced Header */}
+        {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <View style={styles.headerTop}>
               <View>
-                <Text style={styles.headerTitle}>Disaster Watch</Text>
-                <Text style={styles.headerSub}>Real-time hazard monitoring</Text>
+                <ScaledText variant="h2" style={styles.headerTitle}>Disaster Watch</ScaledText>
+                <ScaledText variant="caption" style={styles.headerSub}>Real-time hazard monitoring</ScaledText>
               </View>
             </View>
           </View>
@@ -418,7 +412,7 @@ export default function HazardMap() {
           </View>
         </View>
 
-        {/* Enhanced Tab Selector */}
+        {/* Tab Selector */}
         <View style={styles.tabContainer}>
           <View style={styles.tabBackground} />
           <TouchableOpacity
@@ -433,14 +427,15 @@ export default function HazardMap() {
               size={18}
               color={activeTab === "centers" ? "#FFF" : COLORS.text.secondary}
             />
-            <Text
+            <ScaledText
+              variant="label"
               style={[
                 styles.tabText,
                 activeTab === "centers" && styles.tabTextActive,
               ]}
             >
               Centers
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === "hazards" && styles.tabActive]}
@@ -454,24 +449,25 @@ export default function HazardMap() {
               size={18}
               color={activeTab === "hazards" ? "#FFF" : COLORS.text.secondary}
             />
-            <Text
+            <ScaledText
+              variant="label"
               style={[
                 styles.tabText,
                 activeTab === "hazards" && styles.tabTextActive,
               ]}
             >
               Hazards
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
         </View>
 
-        {/* MAIN CONTENT WRAPPER */}
+        {/* Main Content */}
         <ScrollView
           style={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
         >
-          {/* EVACUATION CENTERS MAP CONTAINER */}
+          {/* Evacuation Centers Tab */}
           {activeTab === "centers" && (
             <Animated.View
               style={[
@@ -487,9 +483,9 @@ export default function HazardMap() {
                       color={COLORS.primary}
                       style={styles.spinner}
                     />
-                    <Text style={styles.loadingText}>
+                    <ScaledText variant="body" style={styles.loadingText}>
                       Fetching evacuation centers...
-                    </Text>
+                    </ScaledText>
                   </View>
                 ) : (
                   <MapView
@@ -541,11 +537,11 @@ export default function HazardMap() {
                       size={12}
                       color={COLORS.primary}
                     />
-                    <Text style={styles.cityPillText}>{visibleCity}</Text>
-                    <Text style={styles.cityPillCount}>
+                    <ScaledText variant="label" style={styles.cityPillText}>{visibleCity}</ScaledText>
+                    <ScaledText variant="caption" style={styles.cityPillCount}>
                       {visibleCenters.length} center
                       {visibleCenters.length !== 1 ? "s" : ""}
-                    </Text>
+                    </ScaledText>
                   </View>
                 )}
 
@@ -602,12 +598,12 @@ export default function HazardMap() {
                       />
                     </View>
                     <View style={styles.cardInfo}>
-                      <Text style={styles.cardName} numberOfLines={1}>
+                      <ScaledText variant="h4" style={styles.cardName} numberOfLines={1}>
                         {selectedCenter.name}
-                      </Text>
-                      <Text style={styles.cardType} numberOfLines={1}>
+                      </ScaledText>
+                      <ScaledText variant="label" style={styles.cardType} numberOfLines={1}>
                         {selectedCenter.type}
-                      </Text>
+                      </ScaledText>
                     </View>
                     <TouchableOpacity
                       onPress={() => setSelectedCenter(null)}
@@ -633,10 +629,10 @@ export default function HazardMap() {
                         color={COLORS.text.tertiary}
                       />
                       <View style={styles.detailText}>
-                        <Text style={styles.detailLabel}>Address</Text>
-                        <Text style={styles.detailValue} numberOfLines={2}>
+                        <ScaledText variant="caption" style={styles.detailLabel}>Address</ScaledText>
+                        <ScaledText variant="body" style={styles.detailValue} numberOfLines={2}>
                           {selectedCenter.address}
-                        </Text>
+                        </ScaledText>
                       </View>
                     </View>
 
@@ -648,10 +644,10 @@ export default function HazardMap() {
                           color={COLORS.text.tertiary}
                         />
                         <View style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Distance</Text>
-                          <Text style={styles.detailValue}>
+                          <ScaledText variant="caption" style={styles.detailLabel}>Distance</ScaledText>
+                          <ScaledText variant="body" style={styles.detailValue}>
                             {selectedCenter.distance.toFixed(2)} km away
-                          </Text>
+                          </ScaledText>
                         </View>
                       </View>
                     )}
@@ -664,10 +660,10 @@ export default function HazardMap() {
                           color={COLORS.text.tertiary}
                         />
                         <View style={styles.detailText}>
-                          <Text style={styles.detailLabel}>Capacity</Text>
-                          <Text style={styles.detailValue}>
+                          <ScaledText variant="caption" style={styles.detailLabel}>Capacity</ScaledText>
+                          <ScaledText variant="body" style={styles.detailValue}>
                             {selectedCenter.capacity} persons
-                          </Text>
+                          </ScaledText>
                         </View>
                       </View>
                     )}
@@ -692,14 +688,14 @@ export default function HazardMap() {
                     accessibilityRole="button"
                   >
                     <MaterialIcons name="directions" size={18} color="#FFF" />
-                    <Text style={styles.dirBtnTxt}>Get Directions</Text>
+                    <ScaledText variant="button" style={styles.dirBtnTxt}>Get Directions</ScaledText>
                   </TouchableOpacity>
                 </Animated.View>
               )}
             </Animated.View>
           )}
 
-          {/* HAZARDS MAP CONTAINER */}
+          {/* Hazards Tab */}
           {activeTab === "hazards" && (
             <Animated.View
               style={[
@@ -719,7 +715,6 @@ export default function HazardMap() {
                   loadingEnabled
                   loadingIndicatorColor={COLORS.primary}
                 >
-                  {/* Flood zones */}
                   {FLOOD_HAZARD_AREAS.map((area) => (
                     <Polygon
                       key={area.id}
@@ -730,7 +725,6 @@ export default function HazardMap() {
                     />
                   ))}
 
-                  {/* Fault lines */}
                   {EARTHQUAKE_FAULT_LINES.map((fault) => (
                     <Polygon
                       key={fault.id}
@@ -741,7 +735,6 @@ export default function HazardMap() {
                     />
                   ))}
 
-                  {/* Liquefaction zones */}
                   {LIQUEFACTION_ZONES.map((zone) => (
                     <Polygon
                       key={zone.id}
@@ -752,7 +745,6 @@ export default function HazardMap() {
                     />
                   ))}
 
-                  {/* Volcanoes */}
                   {VOLCANOES.map((v) => (
                     <Marker
                       key={v.id}
@@ -774,9 +766,9 @@ export default function HazardMap() {
                   ))}
                 </MapView>
 
-                {/* Enhanced Legend */}
+                {/* Legend */}
                 <View style={styles.legend}>
-                  <Text style={styles.legendTitle}>Hazard Types</Text>
+                  <ScaledText variant="caption" style={styles.legendTitle}>Hazard Types</ScaledText>
                   <View style={styles.legendItem}>
                     <View
                       style={[
@@ -784,7 +776,7 @@ export default function HazardMap() {
                         { backgroundColor: COLORS.hazard.flood },
                       ]}
                     />
-                    <Text style={styles.legendText}>Flood Zones</Text>
+                    <ScaledText variant="caption" style={styles.legendText}>Flood Zones</ScaledText>
                   </View>
                   <View style={styles.legendItem}>
                     <View
@@ -793,7 +785,7 @@ export default function HazardMap() {
                         { backgroundColor: COLORS.hazard.earthquake },
                       ]}
                     />
-                    <Text style={styles.legendText}>Fault Lines</Text>
+                    <ScaledText variant="caption" style={styles.legendText}>Fault Lines</ScaledText>
                   </View>
                   <View style={styles.legendItem}>
                     <View
@@ -802,7 +794,7 @@ export default function HazardMap() {
                         { backgroundColor: COLORS.hazard.volcano },
                       ]}
                     />
-                    <Text style={styles.legendText}>Volcanoes</Text>
+                    <ScaledText variant="caption" style={styles.legendText}>Volcanoes</ScaledText>
                   </View>
                   <View style={styles.legendItem}>
                     <View
@@ -811,7 +803,7 @@ export default function HazardMap() {
                         { backgroundColor: COLORS.hazard.liquefaction },
                       ]}
                     />
-                    <Text style={styles.legendText}>Liquefaction</Text>
+                    <ScaledText variant="caption" style={styles.legendText}>Liquefaction</ScaledText>
                   </View>
                 </View>
 
@@ -847,7 +839,7 @@ export default function HazardMap() {
           {/* Official Sources */}
           {!infoModal && !directionsModal && (
             <View style={styles.sources}>
-              <Text style={styles.sourcesTitle}>Official Resources</Text>
+              <ScaledText variant="h4" style={styles.sourcesTitle}>Official Resources</ScaledText>
               <View style={styles.sourceGrid}>
                 {[
                   {
@@ -885,7 +877,7 @@ export default function HazardMap() {
                         color="#FFF"
                       />
                     </View>
-                    <Text style={styles.sourceLabel}>{s.label}</Text>
+                    <ScaledText variant="caption" style={styles.sourceLabel}>{s.label}</ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -894,9 +886,9 @@ export default function HazardMap() {
 
           {/* Footer */}
           {!infoModal && !directionsModal && (
-            <Text style={styles.footer}>
+            <ScaledText variant="caption" style={styles.footer}>
               Last updated: {new Date().toLocaleTimeString()} • Monitoring active
-            </Text>
+            </ScaledText>
           )}
         </ScrollView>
       </Animated.View>
@@ -931,7 +923,7 @@ export default function HazardMap() {
               onStartShouldSetResponder={() => true}
             >
               <View style={styles.modalHead}>
-                <Text style={styles.modalTitle}>About Disaster Watch</Text>
+                <ScaledText variant="h3" style={styles.modalTitle}>About Disaster Watch</ScaledText>
                 <TouchableOpacity
                   onPress={closeInfoModal}
                   accessibilityLabel="Close modal"
@@ -949,75 +941,75 @@ export default function HazardMap() {
                 style={styles.modalScroll}
               >
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Purpose</Text>
-                  <Text style={styles.sectionBody}>
+                  <ScaledText variant="h4" style={styles.sectionTitle}>Purpose</ScaledText>
+                  <ScaledText variant="body" style={styles.sectionBody}>
                     Disaster Watch provides real-time monitoring of natural
                     hazards in Luzon and displays nearby evacuation centers for
                     emergency preparedness.
-                  </Text>
+                  </ScaledText>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Hazards Map</Text>
+                  <ScaledText variant="h4" style={styles.sectionTitle}>Hazards Map</ScaledText>
                   <View style={styles.bulletList}>
-                    <Text style={styles.bullet}>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Flood-prone areas based on historical data
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Active fault lines including Marikina Valley Fault
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Volcanic monitoring zones (Mayon, Taal, Pinatubo)
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Liquefaction-prone areas in coastal regions
-                    </Text>
+                    </ScaledText>
                   </View>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Evacuation Centers</Text>
+                  <ScaledText variant="h4" style={styles.sectionTitle}>Evacuation Centers</ScaledText>
                   <View style={styles.bulletList}>
-                    <Text style={styles.bullet}>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Verified evacuation centers across Luzon
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Distance from your current location
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Direct directions to centers via Google or Apple Maps
-                    </Text>
+                    </ScaledText>
                   </View>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Features</Text>
+                  <ScaledText variant="h4" style={styles.sectionTitle}>Features</ScaledText>
                   <View style={styles.bulletList}>
-                    <Text style={styles.bullet}>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Toggle between standard and satellite map views
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Your location displayed on map with live updates
-                    </Text>
-                    <Text style={styles.bullet}>
+                    </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
                       • Quick access to official monitoring agencies
-                    </Text>
+                    </ScaledText>
                   </View>
                 </View>
 
                 <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-                  <Text style={styles.sectionBody}>
+                  <ScaledText variant="h4" style={styles.sectionTitle}>Emergency Contacts</ScaledText>
+                  <ScaledText variant="body" style={styles.sectionBody}>
                     In case of emergencies, contact NDRRMC at 1-888-NDRRMC or
                     visit their website for real-time disaster updates.
-                  </Text>
+                  </ScaledText>
                 </View>
               </ScrollView>
               <TouchableOpacity
                 style={styles.modalCloseBtn}
                 onPress={closeInfoModal}
               >
-                <Text style={styles.modalCloseTxt}>Understood</Text>
+                <ScaledText variant="button" style={styles.modalCloseTxt}>Understood</ScaledText>
               </TouchableOpacity>
             </Animated.View>
           </TouchableOpacity>
@@ -1055,7 +1047,7 @@ export default function HazardMap() {
               onStartShouldSetResponder={() => true}
             >
               <View style={styles.modalHead}>
-                <Text style={styles.modalTitle}>Get Directions</Text>
+                <ScaledText variant="h3" style={styles.modalTitle}>Get Directions</ScaledText>
                 <TouchableOpacity
                   onPress={closeDirectionsModal}
                   accessibilityLabel="Close modal"
@@ -1079,25 +1071,25 @@ export default function HazardMap() {
                       />
                     </View>
                     <View style={styles.dirInfoText}>
-                      <Text style={styles.dirModalName}>
+                      <ScaledText variant="h4" style={styles.dirModalName}>
                         {selectedCenter.name}
-                      </Text>
-                      <Text style={styles.dirModalAddr}>
+                      </ScaledText>
+                      <ScaledText variant="body" style={styles.dirModalAddr}>
                         {selectedCenter.address}
-                      </Text>
+                      </ScaledText>
                       {selectedCenter.distance !== undefined && (
-                        <Text style={styles.dirModalDist}>
+                        <ScaledText variant="label" style={styles.dirModalDist}>
                           {selectedCenter.distance.toFixed(2)} km away
-                        </Text>
+                        </ScaledText>
                       )}
                     </View>
                   </View>
 
                   <View style={styles.dirDivider} />
 
-                  <Text style={styles.dirChooseTitle}>
+                  <ScaledText variant="h4" style={styles.dirChooseTitle}>
                     Choose Navigation App
-                  </Text>
+                  </ScaledText>
                   <View style={styles.mapAppRow}>
                     <TouchableOpacity
                       style={styles.mapAppBtn}
@@ -1110,7 +1102,7 @@ export default function HazardMap() {
                         style={styles.mapAppImage}
                         resizeMode="contain"
                       />
-                      <Text style={styles.mapAppLabel}>Google Maps</Text>
+                      <ScaledText variant="label" style={styles.mapAppLabel}>Google Maps</ScaledText>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.mapAppBtn}
@@ -1123,7 +1115,7 @@ export default function HazardMap() {
                         style={styles.mapAppImage}
                         resizeMode="contain"
                       />
-                      <Text style={styles.mapAppLabel}>Apple Maps</Text>
+                      <ScaledText variant="label" style={styles.mapAppLabel}>Apple Maps</ScaledText>
                     </TouchableOpacity>
                   </View>
 
@@ -1133,7 +1125,7 @@ export default function HazardMap() {
                     accessibilityLabel="Cancel"
                     accessibilityRole="button"
                   >
-                    <Text style={styles.dirCancelTxt}>Cancel</Text>
+                    <ScaledText variant="body" style={styles.dirCancelTxt}>Cancel</ScaledText>
                   </TouchableOpacity>
                 </View>
               )}
@@ -1149,7 +1141,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1 },
 
-  // ✅ Location disabled screen styles
   locationDisabledContainer: {
     flex: 1,
     alignItems: "center",
@@ -1167,23 +1158,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   locationDisabledTitle: {
-    fontSize: 20,
-    fontWeight: "700",
     color: COLORS.text.primary,
     textAlign: "center",
     marginBottom: 10,
   },
   locationDisabledBody: {
-    fontSize: 14,
     color: COLORS.text.secondary,
     textAlign: "center",
     lineHeight: 22,
-    fontWeight: "500",
   },
 
   scrollContainer: { flex: 1 },
 
-  /* HEADER */
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1197,12 +1183,10 @@ const styles = StyleSheet.create({
   headerContent: { flex: 1 },
   headerTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "800",
     color: COLORS.text.primary,
     letterSpacing: 0.3,
   },
-  headerSub: { fontSize: 12, color: COLORS.text.tertiary, marginTop: 2 },
+  headerSub: { color: COLORS.text.tertiary, marginTop: 2 },
   headerControls: { flexDirection: "row", gap: 10 },
   headerBtn: {
     width: 40,
@@ -1215,7 +1199,6 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
 
-  /* TABS */
   tabContainer: {
     flexDirection: "row",
     marginHorizontal: 16,
@@ -1252,13 +1235,10 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   tabText: {
-    fontSize: 14,
-    fontWeight: "700",
     color: COLORS.text.secondary,
   },
   tabTextActive: { color: "#FFF" },
 
-  /* MAP CONTAINER */
   mapContainer: {
     paddingHorizontal: 0,
     marginBottom: 0,
@@ -1283,12 +1263,9 @@ const styles = StyleSheet.create({
   },
   spinner: { marginBottom: 16 },
   loadingText: {
-    fontSize: 14,
     color: COLORS.text.secondary,
-    fontWeight: "600",
   },
 
-  /* MARKERS */
   volcMarker: {
     backgroundColor: COLORS.hazard.volcano,
     borderRadius: 20,
@@ -1319,7 +1296,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
   },
 
-  /* LEGEND */
   legend: {
     position: "absolute",
     bottom: 12,
@@ -1337,8 +1313,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   legendTitle: {
-    fontSize: 11,
-    fontWeight: "800",
     color: COLORS.text.primary,
     marginBottom: 8,
     textTransform: "uppercase",
@@ -1352,9 +1326,7 @@ const styles = StyleSheet.create({
   },
   legendIndicator: { width: 12, height: 12, borderRadius: 4 },
   legendText: {
-    fontSize: 10,
     color: COLORS.text.secondary,
-    fontWeight: "600",
   },
   recenterBtn: {
     position: "absolute",
@@ -1375,7 +1347,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
 
-  /* CITY PILL */
   cityPill: {
     position: "absolute",
     top: 12,
@@ -1400,18 +1371,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   cityPillText: {
-    fontSize: 12,
-    fontWeight: "700",
     color: COLORS.text.primary,
   },
   cityPillCount: {
-    fontSize: 11,
-    fontWeight: "600",
     color: COLORS.primary,
     marginLeft: 2,
   },
 
-  /* CARD */
   card: {
     marginHorizontal: 16,
     marginTop: 14,
@@ -1443,15 +1409,11 @@ const styles = StyleSheet.create({
   },
   cardInfo: { flex: 1 },
   cardName: {
-    fontSize: 14,
-    fontWeight: "800",
     color: COLORS.text.primary,
     marginBottom: 2,
   },
   cardType: {
-    fontSize: 12,
     color: COLORS.text.secondary,
-    fontWeight: "600",
   },
   closeBtn: { padding: 4 },
   cardDivider: { height: 1, backgroundColor: COLORS.border },
@@ -1463,16 +1425,12 @@ const styles = StyleSheet.create({
   },
   detailText: { flex: 1 },
   detailLabel: {
-    fontSize: 11,
     color: COLORS.text.tertiary,
-    fontWeight: "700",
     textTransform: "uppercase",
     letterSpacing: 0.3,
   },
   detailValue: {
-    fontSize: 13,
     color: COLORS.text.primary,
-    fontWeight: "600",
     marginTop: 2,
   },
   dirBtn: {
@@ -1491,9 +1449,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  dirBtnTxt: { color: "#FFF", fontWeight: "800", fontSize: 14 },
+  dirBtnTxt: { color: "#FFF" },
 
-  /* SOURCES */
   sources: {
     marginHorizontal: 16,
     marginVertical: 12,
@@ -1505,8 +1462,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sourcesTitle: {
-    fontSize: 13,
-    fontWeight: "800",
     color: COLORS.text.primary,
     marginBottom: 12,
     letterSpacing: 0.3,
@@ -1529,22 +1484,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sourceLabel: {
-    fontSize: 10,
     color: COLORS.text.secondary,
-    fontWeight: "700",
     textAlign: "center",
   },
 
-  /* FOOTER */
   footer: {
     textAlign: "center",
-    fontSize: 10,
     color: COLORS.text.tertiary,
     marginBottom: 16,
-    fontWeight: "600",
   },
 
-  /* MODALS */
   modalContainer: { flex: 1 },
   modalOverlay: {
     flex: 1,
@@ -1577,8 +1526,6 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "800",
     color: COLORS.text.primary,
     letterSpacing: 0.2,
     flex: 1,
@@ -1586,23 +1533,17 @@ const styles = StyleSheet.create({
   modalScroll: { marginHorizontal: -4, marginBottom: 16 },
   section: { marginBottom: 18 },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
     color: COLORS.text.primary,
     marginBottom: 8,
     letterSpacing: 0.3,
   },
   sectionBody: {
-    fontSize: 13,
     color: COLORS.text.secondary,
     lineHeight: 20,
-    fontWeight: "500",
   },
   bulletList: { gap: 6 },
   bullet: {
-    fontSize: 12,
     color: COLORS.text.secondary,
-    fontWeight: "500",
     lineHeight: 18,
   },
   modalCloseBtn: {
@@ -1618,9 +1559,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  modalCloseTxt: { color: "#FFF", fontWeight: "800", fontSize: 15 },
+  modalCloseTxt: { color: "#FFF" },
 
-  /* DIRECTIONS MODAL */
   dirModalContent: { paddingVertical: 14 },
   dirModalInfo: {
     flexDirection: "row",
@@ -1634,21 +1574,15 @@ const styles = StyleSheet.create({
   dirInfoIcon: { marginTop: 2 },
   dirInfoText: { flex: 1 },
   dirModalName: {
-    fontSize: 14,
-    fontWeight: "800",
     color: COLORS.text.primary,
     marginBottom: 4,
   },
   dirModalAddr: {
-    fontSize: 12,
     color: COLORS.text.secondary,
     marginBottom: 4,
-    fontWeight: "500",
   },
   dirModalDist: {
-    fontSize: 11,
     color: COLORS.primary,
-    fontWeight: "700",
   },
   dirDivider: {
     height: 1,
@@ -1656,8 +1590,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   dirChooseTitle: {
-    fontSize: 13,
-    fontWeight: "700",
     color: COLORS.text.primary,
     marginBottom: 12,
   },
@@ -1678,8 +1610,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mapAppLabel: {
-    fontSize: 12,
-    fontWeight: "700",
     color: COLORS.text.primary,
     textAlign: "center",
   },
@@ -1695,7 +1625,5 @@ const styles = StyleSheet.create({
   },
   dirCancelTxt: {
     color: COLORS.text.secondary,
-    fontSize: 14,
-    fontWeight: "700",
   },
 });

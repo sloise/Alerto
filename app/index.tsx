@@ -20,7 +20,6 @@ const FULL_TEXT = "ALERT";
 export default function Index() {
   const router = useRouter();
   const hasRedirected = useRef(false);
-   console.log("🚨 SPLASH SCREEN LOADING");
 
   const [frameIndex, setFrameIndex] = useState(0);
   const [phase, setPhase] = useState(0);

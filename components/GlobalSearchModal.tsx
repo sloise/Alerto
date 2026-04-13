@@ -33,10 +33,17 @@ export function GlobalSearchModal({
   allAlerts?: any[];
   nearestCenters?: any[];
 }) {
-  const { isVoiceEnabled, isGestureEnabled } = useAccessibility();
+  const { inputModes } = useAccessibility();
+  
+  // Get enabled states from inputModes
+  const isVoiceEnabled = inputModes.find(m => m.id === 'voice')?.enabled ?? false;
+  const isGestureEnabled = inputModes.find(m => m.id === 'gesture')?.enabled ?? false;
+  
   const [tab, setTab] = useState<"text" | "gesture" | "voice">("text");
   const [query, setQuery] = useState("");
   const slideY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+
+  // ... rest of your code
 
   React.useEffect(() => {
     Animated.spring(slideY, {

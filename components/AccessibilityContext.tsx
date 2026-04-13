@@ -2,91 +2,128 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '../firebaseConfig';
 
-interface InputMode {
+export interface InputMode {
   id: string;
   label: string;
   icon: string;
-  image: any;
   enabled: boolean;
 }
 
 interface AccessibilityContextType {
   inputModes: InputMode[];
   setInputModes: (modes: InputMode[]) => void;
-  isVoiceEnabled: boolean;
-  isGestureEnabled: boolean;
-  isLocationEnabled: boolean;
   textSizeMultiplier: number;
   setTextSizeMultiplier: (multiplier: number) => void;
-  loadAccessibilitySettings: () => Promise<void>;
+  isLoading: boolean;
+  isLocationEnabled: boolean;
 }
 
-export const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
+const defaultValue: AccessibilityContextType = {
+  inputModes: [
+    { id: 'gesture', label: 'Gesture Control', icon: 'gesture', enabled: false },
+    { id: 'voice', label: 'Voice Control', icon: 'voice', enabled: false },
+    { id: 'largeText', label: 'Large Text', icon: 'large-text', enabled: false },
+    { id: 'location', label: 'Location Services', icon: 'location', enabled: false },
+  ],
+  setInputModes: () => {},
+  textSizeMultiplier: 1,
+  setTextSizeMultiplier: () => {},
+  isLoading: true,
+  isLocationEnabled: false,
+};
+
+const AccessibilityContext = createContext<AccessibilityContextType>(defaultValue);
 
 export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
-  const [inputModes, setInputModes] = useState<InputMode[]>([
-    { id: 'gesture', label: 'Gesture Recognition', icon: 'hand-right', image: null, enabled: false },
-    { id: 'voice', label: 'Voice Input', icon: 'microphone', image: null, enabled: false },
-    { id: 'largeText', label: 'Large Text', icon: 'text', image: null, enabled: false },
-    { id: 'location', label: 'Location Services', icon: 'location', image: null, enabled: false }
-  ]);
+  const [inputModes, setInputModes] = useState<InputMode[]>(defaultValue.inputModes);
   const [textSizeMultiplier, setTextSizeMultiplier] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load accessibility settings from Firestore on app start
-  const loadAccessibilitySettings = async () => {
-    const user = auth.currentUser;
-    if (user) {
+  const isLocationEnabled = inputModes.find(m => m.id === 'location')?.enabled ?? false;
+
+  // Load accessibility settings from Firebase on mount
+  useEffect(() => {
+    const loadAccessibilitySettings = async () => {
+      const user = auth.currentUser;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-         const userDoc = await getDoc(doc(db, 'users', user.uid));
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+
         if (userDoc.exists()) {
           const data = userDoc.data();
-          if (data.inputModes) setInputModes(data.inputModes);
-          if (data.textSizeMultiplier) setTextSizeMultiplier(data.textSizeMultiplier);
+
+          if (data.inputModes && Array.isArray(data.inputModes)) {
+            setInputModes(data.inputModes);
+          }
+
+          if (data.textSizeMultiplier) {
+            const multiplier = Math.max(0.8, Math.min(1.5, data.textSizeMultiplier));
+            setTextSizeMultiplier(multiplier);
+          }
         }
       } catch (error) {
-        console.error('Error loading accessibility settings:', error);
+        console.warn('Failed to load accessibility settings:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-  };
+    };
 
-  // Save settings to Firestore when they change
-  const saveSettings = async () => {
-    const user = auth.currentUser;
-    if (user) {
-      try {
-        await setDoc(doc(db, 'users', user.uid), {
-          inputModes,
-          textSizeMultiplier,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      } catch (error) {
-        console.error('Error saving accessibility settings:', error);
-      }
-    }
-  };
-
-  useEffect(() => {
     loadAccessibilitySettings();
   }, []);
 
+  // Auto-save input modes to Firebase when they change
   useEffect(() => {
-    saveSettings();
-  }, [inputModes, textSizeMultiplier]);
+    const saveInputModes = async () => {
+      const user = auth.currentUser;
+      if (!user || isLoading) return;
 
-  const isVoiceEnabled = inputModes.find(m => m.id === 'voice')?.enabled ?? false;
-  const isGestureEnabled = inputModes.find(m => m.id === 'gesture')?.enabled ?? false;
-  const isLocationEnabled = inputModes.find(m => m.id === 'location')?.enabled ?? false;
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          { inputModes, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch (error) {
+        console.warn('Failed to save input modes:', error);
+      }
+    };
+
+    saveInputModes();
+  }, [inputModes, isLoading]);
+
+  // Auto-save text size multiplier to Firebase when it changes
+  useEffect(() => {
+    const saveTextSize = async () => {
+      const user = auth.currentUser;
+      if (!user || isLoading) return;
+
+      try {
+        await setDoc(
+          doc(db, 'users', user.uid),
+          { textSizeMultiplier, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+      } catch (error) {
+        console.warn('Failed to save text size multiplier:', error);
+      }
+    };
+
+    saveTextSize();
+  }, [textSizeMultiplier, isLoading]);
+
   return (
     <AccessibilityContext.Provider
       value={{
         inputModes,
         setInputModes,
-        isVoiceEnabled,
-        isGestureEnabled,
-        isLocationEnabled,
         textSizeMultiplier,
         setTextSizeMultiplier,
-        loadAccessibilitySettings,
+        isLoading,
+        isLocationEnabled,
       }}
     >
       {children}
@@ -96,8 +133,12 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
 export function useAccessibility() {
   const context = useContext(AccessibilityContext);
+
   if (!context) {
     throw new Error('useAccessibility must be used within AccessibilityProvider');
   }
+
   return context;
 }
+
+export default AccessibilityContext;

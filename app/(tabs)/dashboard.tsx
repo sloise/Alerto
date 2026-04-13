@@ -9,9 +9,9 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity, 
-  Text,
   View
 } from "react-native";
+import { ScaledText } from "../ScaledText"; // 👈 ADD THIS IMPORT
 import { GlobalSearchModal } from '../../components/GlobalSearchModal';
 import { useGlobalSearch } from '../../components/useGlobalSearch';
 import { VoiceResult } from '../../components/VoiceRecognition';
@@ -242,13 +242,14 @@ export default function Dashboard() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.searchBar} onPress={() => setModalVisible(true)}>
-            <Text style={searchQuery ? styles.searchTxt : styles.searchPlaceholder}>
+<ScaledText style={[searchQuery ? styles.searchTxt : styles.searchPlaceholder, { fontSize: 14 }]}>
+
               {searchQuery || "Search alerts..."}
-            </Text>
+            </ScaledText>
           </TouchableOpacity>
           {searchQuery ? (
             <TouchableOpacity style={[styles.searchBtn, { backgroundColor: "#666" }]} onPress={clearSearch}>
-              <Text style={styles.searchBtnIcon}>✕</Text>
+<ScaledText style={[styles.searchBtnIcon, { fontSize: 18 }]}>✕</ScaledText>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.searchBtn} onPress={() => setModalVisible(true)}>
@@ -261,19 +262,19 @@ export default function Dashboard() {
         </View>
 
         <View style={styles.welcomeCard}>
-          <Text style={styles.userName}>Welcome, {userName}!</Text>
-          <Text style={styles.welcomeSub}>{location}</Text>
-          <Text style={styles.dateDisplay}>{formatDate(currentDate)}</Text>
-          <Text style={styles.timeDisplay}>{formatTime(currentDate)}</Text>
+          <ScaledText variant="h2" style={styles.userName}>Welcome, {userName}!</ScaledText>
+          <ScaledText variant="label" style={styles.welcomeSub}>{location}</ScaledText>
+          <ScaledText variant="body" style={styles.dateDisplay}>{formatDate(currentDate)}</ScaledText>
+          <ScaledText variant="label" style={styles.timeDisplay}>{formatTime(currentDate)}</ScaledText>
           <TouchableOpacity style={styles.alertPill}>
-            <Text style={styles.alertPillTxt}>
+            <ScaledText variant="label" style={styles.alertPillTxt}>
               {alerts.length > 0 ? alerts[0].title : "No active alerts"}
-            </Text>
-            <Text style={styles.alertPillArrow}>›</Text>
+            </ScaledText>
+            <ScaledText variant="label" style={styles.alertPillArrow}>›</ScaledText>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionTitle}>Quick access</Text>
+        <ScaledText variant="h3" style={styles.sectionTitle}>Quick access</ScaledText>
         <View style={styles.quickRow}>
           {QUICK_ACCESS.map((item) => (
             <TouchableOpacity 
@@ -300,7 +301,7 @@ export default function Dashboard() {
                   style={styles.quickIconImage}
                 />
               )}
-              <Text style={styles.quickLabel}>{item.label}</Text>
+              <ScaledText variant="caption" style={styles.quickLabel}>{item.label}</ScaledText>
             </TouchableOpacity>
           ))}
         </View>
@@ -309,11 +310,11 @@ export default function Dashboard() {
         {voiceResults.length > 0 && (
           <View>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
+              <ScaledText variant="h3" style={styles.sectionTitle}>
                 Results for "{voiceQuery}"
-              </Text>
+              </ScaledText>
               <TouchableOpacity onPress={clearVoiceResults}>
-                <Text style={styles.seeAll}>Clear</Text>
+                <ScaledText variant="label" style={styles.seeAll}>Clear</ScaledText>
               </TouchableOpacity>
             </View>
 
@@ -327,12 +328,12 @@ export default function Dashboard() {
                   >
                     <View style={styles.alertTop}>
                       <View style={styles.levelBadge}>
-                        <Text style={styles.levelTxt}>{result.source}</Text>
+                        <ScaledText variant="label" style={styles.levelTxt}>{result.source}</ScaledText>
                       </View>
-                      <Text style={styles.alertTime}>{result.icon}</Text>
+                      <ScaledText variant="caption" style={styles.alertTime}>{result.icon}</ScaledText>
                     </View>
-                    <Text style={styles.alertTitle}>{result.title}</Text>
-                    <Text style={styles.alertDesc}>{result.desc}</Text>
+                    <ScaledText variant="h4" style={styles.alertTitle}>{result.title}</ScaledText>
+                    <ScaledText variant="body" style={styles.alertDesc}>{result.desc}</ScaledText>
                   </TouchableOpacity>
                 );
               } else if (result.type === 'center') {
@@ -343,13 +344,13 @@ export default function Dashboard() {
                     onPress={() => handleVoiceResultTap(result)}
                   >
                     <View style={styles.centerIcon}>
-                      <Text style={{ fontSize: 20 }}>{result.icon}</Text>
+<ScaledText style={{ fontSize: 20 }}>{result.icon}</ScaledText>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.centerName}>{result.title}</Text>
-                      <Text style={styles.centerType}>{result.desc}</Text>
+                      <ScaledText variant="body" style={styles.centerName}>{result.title}</ScaledText>
+                      <ScaledText variant="caption" style={styles.centerType}>{result.desc}</ScaledText>
                     </View>
-                    <Text style={styles.centerDist}>›</Text>
+                    <ScaledText variant="h4" style={styles.centerDist}>›</ScaledText>
                   </TouchableOpacity>
                 );
               } else {
@@ -360,12 +361,12 @@ export default function Dashboard() {
                     style={[styles.actionCard]}
                     onPress={() => handleVoiceResultTap(result)}
                   >
-                    <Text style={styles.actionIcon}>{result.icon}</Text>
+<ScaledText style={[styles.actionIcon, { fontSize: 28 }]}>{result.icon}</ScaledText>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.actionTitle}>{result.title}</Text>
-                      <Text style={styles.actionDesc}>{result.desc}</Text>
+                      <ScaledText variant="body" style={styles.actionTitle}>{result.title}</ScaledText>
+                      <ScaledText variant="caption" style={styles.actionDesc}>{result.desc}</ScaledText>
                     </View>
-                    <Text style={styles.actionArrow}>›</Text>
+                    <ScaledText variant="h4" style={styles.actionArrow}>›</ScaledText>
                   </TouchableOpacity>
                 );
               }
@@ -374,52 +375,52 @@ export default function Dashboard() {
         )}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
+          <ScaledText variant="h3" style={styles.sectionTitle}>
             {searchQuery ? `Results for "${searchQuery}"` : "Active alerts"}
-          </Text>
+          </ScaledText>
           {searchQuery && (
             <TouchableOpacity onPress={clearSearch}>
-              <Text style={styles.seeAll}>Clear</Text>
+              <ScaledText variant="label" style={styles.seeAll}>Clear</ScaledText>
             </TouchableOpacity>
           )}
         </View>
 
         {loading ? (
-          <Text style={{ color: "#888", marginBottom: 12 }}>Loading alerts...</Text>
+          <ScaledText variant="body" style={{ color: "#888", marginBottom: 12 }}>Loading alerts...</ScaledText>
         ) : filteredAlerts.length === 0 ? (
-          <Text style={{ color: "#888", marginBottom: 12 }}>
+          <ScaledText variant="body" style={{ color: "#888", marginBottom: 12 }}>
             {searchQuery ? `No alerts found for "${searchQuery}"` : "No active alerts"}
-          </Text>
+          </ScaledText>
         ) : (
           filteredAlerts.slice(0, 5).map((a) => (
             <TouchableOpacity key={a.id} style={[styles.alertCard, { backgroundColor: a.color }]}>
               <View style={styles.alertTop}>
-                <View style={styles.levelBadge}><Text style={styles.levelTxt}>{a.level}</Text></View>
-                <Text style={styles.alertTime}>{a.time}</Text>
+                <View style={styles.levelBadge}><ScaledText variant="label" style={styles.levelTxt}>{a.level}</ScaledText></View>
+                <ScaledText variant="caption" style={styles.alertTime}>{a.time}</ScaledText>
               </View>
-              <Text style={styles.alertTitle}>{a.title}</Text>
-              <Text style={styles.alertDesc}>{a.desc}</Text>
+              <ScaledText variant="h4" style={styles.alertTitle}>{a.title}</ScaledText>
+              <ScaledText variant="body" style={styles.alertDesc}>{a.desc}</ScaledText>
             </TouchableOpacity>
           ))
         )}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nearest Center</Text>
+          <ScaledText variant="h3" style={styles.sectionTitle}>Nearest Center</ScaledText>
           <TouchableOpacity onPress={() => router.push("/hazard-map")}>
-            <Text style={styles.seeAll}>View all</Text>
+            <ScaledText variant="label" style={styles.seeAll}>View all</ScaledText>
           </TouchableOpacity>
         </View>
         {nearestCenters.map((c) => (
           <TouchableOpacity key={c.id} style={styles.centerCard} onPress={() => router.push("/hazard-map")}>
-            <View style={styles.centerIcon}><Text style={{ fontSize: 20 }}>🏫</Text></View>
+<ScaledText style={{ fontSize: 20 }}>🏫</ScaledText>
             <View style={{ flex: 1 }}>
-              <Text style={styles.centerName}>{c.name}</Text>
-              <Text style={styles.centerType}>{c.type || "Evacuation Center"}</Text>
+              <ScaledText variant="body" style={styles.centerName}>{c.name}</ScaledText>
+              <ScaledText variant="caption" style={styles.centerType}>{c.type || "Evacuation Center"}</ScaledText>
             </View>
             <View style={{ alignItems: "flex-end" }}>
-              <Text style={styles.centerDist}>{c.distance ? `${c.distance.toFixed(1)} km` : "—"}</Text>
+              <ScaledText variant="label" style={styles.centerDist}>{c.distance ? `${c.distance.toFixed(1)} km` : "—"}</ScaledText>
               <View style={styles.centerDot} />
-              <Text style={styles.centerStatus}>Open</Text>
+              <ScaledText variant="caption" style={styles.centerStatus}>Open</ScaledText>
             </View>
           </TouchableOpacity>
         ))}
@@ -445,41 +446,41 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 },
   searchBar: { flex: 1, height: 46, backgroundColor: "#FFF", borderRadius: 12, paddingHorizontal: 16, justifyContent: "center", borderWidth: 1, borderColor: "#E8E8E8" },
-  searchPlaceholder: { fontSize: 14, color: "#AAA" },
-  searchTxt: { fontSize: 14, color: "#0D0D0D" },
+  searchPlaceholder: { color: "#AAA" },
+  searchTxt: { color: "#0D0D0D" },
   searchBtn: { width: 46, height: 46, borderRadius: 12, backgroundColor: "#FFF", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#E8E8E8" },
   searchIcon: { width: 22, height: 22, resizeMode: "contain", tintColor: "#0D0D0D" },
-  searchBtnIcon: { fontSize: 18, color: "#FFF" },
+  searchBtnIcon: { color: "#FFF" },
   welcomeCard: { backgroundColor: "#D62828", borderRadius: 18, padding: 16, marginBottom: 24, position: "relative", overflow: "hidden" },
-  userName: { fontSize: 26, fontWeight: "800", color: "#FFF", marginBottom: 2 },
-  welcomeSub: { fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 8 },
-  dateDisplay: { fontSize: 13, color: "rgba(255,255,255,0.9)", fontWeight: "600", marginBottom: 2, marginTop: 6 },
-  timeDisplay: { fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 12 },
+  userName: { color: "#FFF", marginBottom: 2 },
+  welcomeSub: { color: "rgba(255,255,255,0.8)", marginBottom: 8 },
+  dateDisplay: { color: "rgba(255,255,255,0.9)", fontWeight: "600", marginBottom: 2, marginTop: 6 },
+  timeDisplay: { color: "rgba(255,255,255,0.8)", marginBottom: 12 },
   alertPill: { backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 30, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 10 },
-  alertPillTxt: { color: "#FFF", fontSize: 13, fontWeight: "600", flex: 1 },
-  alertPillArrow: { color: "#FFF", fontSize: 18, marginLeft: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: "#0D0D0D", marginBottom: 12 },
+  alertPillTxt: { color: "#FFF", flex: 1 },
+  alertPillArrow: { color: "#FFF", marginLeft: 8 },
+  sectionTitle: { color: "#0D0D0D", marginBottom: 12 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  seeAll: { fontSize: 13, color: "#D62828", fontWeight: "600" },
+  seeAll: { color: "#D62828" },
   quickRow: { flexDirection: "row", gap: 10, marginBottom: 24 },
   quickTile: { flex: 1, aspectRatio: 1, backgroundColor: "#FFF", borderRadius: 14, alignItems: "center", justifyContent: "center", borderWidth: 1.5, borderColor: "#E0E0E0" },
   quickIconImage: { width: 28, height: 28, marginBottom: 6, resizeMode: "contain" },
   quickIconMaterial: { marginBottom: 6 },
-  quickLabel: { fontSize: 11, color: "#555", fontWeight: "600", textAlign: "center" },
-  alertCard: { borderRadius: 16, padding: 18, marginBottom: 12, backgroundColor: "#E8802F" },
+  quickLabel: { color: "#555", textAlign: "center" },
+  alertCard: { borderRadius: 16, padding: 18, marginBottom: 12 },
   alertTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   levelBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
-  levelTxt: { color: "#FFF", fontSize: 11, fontWeight: "800", letterSpacing: 0.5 },
-  alertTime: { color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" },
-  alertTitle: { color: "#FFF", fontSize: 16, fontWeight: "800", marginBottom: 6 },
-  alertDesc: { color: "rgba(255,255,255,0.9)", fontSize: 13, lineHeight: 19 },
+  levelTxt: { color: "#FFF", letterSpacing: 0.5 },
+  alertTime: { color: "rgba(255,255,255,0.8)" },
+  alertTitle: { color: "#FFF", marginBottom: 6 },
+  alertDesc: { color: "rgba(255,255,255,0.9)", lineHeight: 19 },
   centerCard: { backgroundColor: "#F5F5F5", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10, borderWidth: 1, borderColor: "#E8E8E8" },
   centerIcon: { width: 40, height: 40, backgroundColor: "#E8E8E8", borderRadius: 8, alignItems: "center", justifyContent: "center", marginRight: 12 },
-  centerName: { fontSize: 13, fontWeight: "700", color: "#0D0D0D", marginBottom: 2 },
-  centerType: { fontSize: 11, color: "#888" },
-  centerDist: { fontSize: 18, fontWeight: "700", color: "#D62828" },
+  centerName: { color: "#0D0D0D", marginBottom: 2 },
+  centerType: { color: "#888" },
+  centerDist: { color: "#D62828" },
   centerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#2ECC71", marginVertical: 2 },
-  centerStatus: { fontSize: 10, color: "#2ECC71", fontWeight: "600" },
+  centerStatus: { color: "#2ECC71" },
   
   actionCard: { 
     flexDirection: "row", 
@@ -491,8 +492,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, 
     borderColor: "#E8E8E8" 
   },
-  actionIcon: { fontSize: 28, marginRight: 12 },
-  actionTitle: { fontSize: 13, fontWeight: "700", color: "#0D0D0D", marginBottom: 2 },
-  actionDesc: { fontSize: 11, color: "#888" },
-  actionArrow: { fontSize: 20, color: "#D62828", fontWeight: "700" },
+  actionIcon: { marginRight: 12 },
+  actionTitle: { color: "#0D0D0D", marginBottom: 2 },
+  actionDesc: { color: "#888" },
+  actionArrow: { color: "#D62828" },
 });

@@ -11,10 +11,10 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
-  Text,
-  View,
+  View
 } from "react-native";
-
+import { useAccessibility } from "../../components/AccessibilityContext"; // 👈 ADD THIS IMPORT
+import ScaledText from "../ScaledText";
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── Go-Bag Data ─────────────────────────────────────────────────────────────
@@ -278,6 +278,7 @@ const PHASE_COLORS: Record<string, string> = {
 
 // ─── Go-Bag Checklist Component ───────────────────────────────────────────────
 function GoBagChecklist() {
+  const { textSizeMultiplier } = useAccessibility(); // 👈 ADD THIS
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [isOpen, setIsOpen] = useState(false);
 
@@ -307,14 +308,16 @@ function GoBagChecklist() {
             <Ionicons name="briefcase-outline" size={24} color="#D62828" />
           </View>
           <View>
-            <Text style={gStyles.title}>Emergency Go-Bag</Text>
-            <Text style={gStyles.subtitle}>Essentials for any disaster</Text>
+            {/* 👈 CHANGED TO ScaledText */}
+            <ScaledText variant="body" style={gStyles.title}>Emergency Go-Bag</ScaledText>
+            <ScaledText variant="caption" style={gStyles.subtitle}>Essentials for any disaster</ScaledText>
           </View>
         </View>
         <View style={gStyles.headerRight}>
           <View style={gStyles.progressCircle}>
-            <Text style={gStyles.progressPercent}>{Math.round(progress * 100)}%</Text>
-            <Text style={gStyles.progressLabel}>Ready</Text>
+            {/* 👈 CHANGED TO ScaledText */}
+            <ScaledText variant="button" style={gStyles.progressPercent}>{Math.round(progress * 100)}%</ScaledText>
+            <ScaledText variant="caption" style={gStyles.progressLabel}>Ready</ScaledText>
           </View>
           <MaterialIcons
             name={isOpen ? "keyboard-arrow-up" : "keyboard-arrow-down"}
@@ -329,7 +332,8 @@ function GoBagChecklist() {
         <View style={gStyles.progressTrack}>
           <View style={[gStyles.progressFill, { width: `${progress * 100}%` as any }]} />
         </View>
-        <Text style={gStyles.progressMessage}>{getProgressMessage()}</Text>
+        {/* 👈 CHANGED TO ScaledText */}
+        <ScaledText variant="caption" style={gStyles.progressMessage}>{getProgressMessage()}</ScaledText>
       </View>
 
       {/* Expanded content */}
@@ -347,7 +351,8 @@ function GoBagChecklist() {
               {/* Section label row */}
               <View style={gStyles.sectionHeader}>
                 <Ionicons name={section.icon as any} size={16} color="#D62828" />
-                <Text style={gStyles.sectionName}>{section.name}</Text>
+                {/* 👈 CHANGED TO ScaledText */}
+                <ScaledText variant="label" style={gStyles.sectionName}>{section.name}</ScaledText>
               </View>
 
               {/* Items */}
@@ -364,11 +369,13 @@ function GoBagChecklist() {
                     <View style={[gStyles.checkbox, isChecked && gStyles.checkboxChecked]}>
                       {isChecked && <Ionicons name="checkmark" size={14} color="#FFF" />}
                     </View>
-                    <Text
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText
+                      variant="label"
                       style={[gStyles.itemText, isChecked && gStyles.itemTextChecked]}
                     >
                       {item}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 );
               })}
@@ -521,6 +528,7 @@ const gStyles = StyleSheet.create({
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function PrepGuide() {
   const router = useRouter();
+  const { textSizeMultiplier } = useAccessibility(); // 👈 ADD THIS
   const [selected, setSelected] = useState<(typeof DISASTERS)[0] | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<"BEFORE" | "DURING" | "AFTER">(
     "BEFORE"
@@ -534,8 +542,9 @@ export default function PrepGuide() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Prep Guide</Text>
-        <Text style={styles.headerSubtitle}>Be prepared, stay safe</Text>
+        {/* 👈 CHANGED TO ScaledText */}
+        <ScaledText variant="h1" style={styles.headerTitle}>Prep Guide</ScaledText>
+        <ScaledText variant="caption" style={styles.headerSubtitle}>Be prepared, stay safe</ScaledText>
       </View>
 
       <ScrollView
@@ -554,14 +563,16 @@ export default function PrepGuide() {
           {["📢 Stay Informed", "📦 Pack Early", "🏃 Know Routes", "👥 Help Others"].map(
             (tip) => (
               <View key={tip} style={styles.tipChip}>
-                <Text style={styles.tipText}>{tip}</Text>
+                {/* 👈 CHANGED TO ScaledText */}
+                <ScaledText variant="caption" style={styles.tipText}>{tip}</ScaledText>
               </View>
             )
           )}
         </ScrollView>
 
         {/* Disaster Guides Section */}
-        <Text style={styles.sectionTitle}>Disaster Preparedness Guides</Text>
+        {/* 👈 CHANGED TO ScaledText */}
+        <ScaledText variant="h2" style={styles.sectionTitle}>Disaster Preparedness Guides</ScaledText>
         <View style={styles.grid}>
           {DISASTERS.map((d) => (
             <TouchableOpacity
@@ -582,13 +593,15 @@ export default function PrepGuide() {
                   resizeMode="contain"
                 />
               </View>
-              <Text style={[styles.disasterLabel, { color: d.color }]}>
+              {/* 👈 CHANGED TO ScaledText */}
+              <ScaledText variant="body" style={[styles.disasterLabel, { color: d.color }]}>
                 {d.label}
-              </Text>
+              </ScaledText>
               <View style={styles.disasterArrow}>
-                <Text style={[styles.disasterArrowText, { color: d.color }]}>
+                {/* 👈 CHANGED TO ScaledText */}
+                <ScaledText variant="caption" style={[styles.disasterArrowText, { color: d.color }]}>
                   View Guide
-                </Text>
+                </ScaledText>
                 <MaterialIcons name="arrow-forward" size={14} color={d.color} />
               </View>
             </TouchableOpacity>
@@ -615,10 +628,11 @@ export default function PrepGuide() {
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.modalTitle, { color: selected.color }]}>
+                {/* 👈 CHANGED TO ScaledText */}
+                <ScaledText variant="h3" style={[styles.modalTitle, { color: selected.color }]}>
                   {selected.label} Guide
-                </Text>
-                <Text style={styles.modalSubtitle}>What to do before, during & after</Text>
+                </ScaledText>
+                <ScaledText variant="caption" style={styles.modalSubtitle}>What to do before, during & after</ScaledText>
               </View>
               <TouchableOpacity
                 onPress={() => setSelected(null)}
@@ -643,14 +657,16 @@ export default function PrepGuide() {
                     ]}
                     onPress={() => setSelectedPhase(phase)}
                   >
-                    <Text
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText
+                      variant="button"
                       style={[
                         styles.phaseTabText,
                         selectedPhase === phase && styles.phaseTabTextActive,
                       ]}
                     >
                       {phase}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -664,15 +680,17 @@ export default function PrepGuide() {
                       style={styles.videoIcon}
                       resizeMode="contain"
                     />
-                    <Text style={styles.videoTitle}>Video Tutorial</Text>
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText variant="body" style={styles.videoTitle}>Video Tutorial</ScaledText>
                   </View>
                   <TouchableOpacity
                     style={styles.hideVideoBtn}
                     onPress={() => setShowVideo(!showVideo)}
                   >
-                    <Text style={styles.hideVideoBtnText}>
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText variant="caption" style={styles.hideVideoBtnText}>
                       {showVideo ? "HIDE VIDEO" : "SHOW VIDEO"}
-                    </Text>
+                    </ScaledText>
                   </TouchableOpacity>
                 </View>
 
@@ -684,7 +702,8 @@ export default function PrepGuide() {
                         {isLoadingVideo && (
                           <View style={styles.videoLoadingOverlay}>
                             <ActivityIndicator size="large" color={selected.color} />
-                            <Text style={styles.videoLoadingText}>Loading video...</Text>
+                            {/* 👈 CHANGED TO ScaledText */}
+                            <ScaledText variant="body" style={styles.videoLoadingText}>Loading video...</ScaledText>
                           </View>
                         )}
                         <Video
@@ -705,10 +724,11 @@ export default function PrepGuide() {
                     ) : (
                       <View style={styles.videoPlaceholder}>
                         <Ionicons name="film-outline" size={48} color="#CCC" />
-                        <Text style={styles.videoPlaceholderText}>Video Coming Soon</Text>
-                        <Text style={styles.videoPlaceholderSubtext}>
+                        {/* 👈 CHANGED TO ScaledText */}
+                        <ScaledText variant="body" style={styles.videoPlaceholderText}>Video Coming Soon</ScaledText>
+                        <ScaledText variant="caption" style={styles.videoPlaceholderSubtext}>
                           Check back for video tutorials
-                        </Text>
+                        </ScaledText>
                       </View>
                     )}
                   </>
@@ -724,10 +744,12 @@ export default function PrepGuide() {
                       style={styles.writtenIcon}
                       resizeMode="contain"
                     />
-                    <Text style={styles.guideTitle}>Written Guide</Text>
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText variant="body" style={styles.guideTitle}>Written Guide</ScaledText>
                   </View>
                   <View style={styles.guideBadge}>
-                    <Text style={styles.guideBadgeText}>STEP-BY-STEP</Text>
+                    {/* 👈 CHANGED TO ScaledText */}
+                    <ScaledText variant="caption" style={styles.guideBadgeText}>STEP-BY-STEP</ScaledText>
                   </View>
                 </View>
 
@@ -749,7 +771,8 @@ export default function PrepGuide() {
                                 },
                               ]}
                             />
-                            <Text style={styles.stepText}>{item}</Text>
+                            {/* 👈 CHANGED TO ScaledText */}
+                            <ScaledText variant="body" style={styles.stepText}>{item}</ScaledText>
                           </View>
                         ))}
                       </View>
