@@ -25,6 +25,7 @@ ios/Pods/
 *.apk
 *.aab
 
+
 # macOS
 .DS_Store
 *.DS_Store
