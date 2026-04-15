@@ -96,9 +96,9 @@ const DISASTERS = [
     image: require("../../assets/images/typhoon.png"), 
     bg: "#E3F2FD",
     videos: {
-      BEFORE: require("../../assets/videos/Before a Typhoon.mp4"),
-      DURING: require("../../assets/videos/During a Typhoon.mp4"),
-      AFTER: require("../../assets/videos/After a Typhoon.mp4"),
+      BEFORE:"gs://alerto-videos.firebasestorage.app/Before a Typhoon.mp4",
+      DURING: "gs://alerto-videos.firebasestorage.app/During a Typhoon.mp4",
+      AFTER: "gs://alerto-videos.firebasestorage.app/After a Typhoon.mp4",
     },
     steps: [
       {
@@ -141,9 +141,9 @@ const DISASTERS = [
     image: require("../../assets/images/flood.png"), 
     bg: "#E1F5FE",
     videos: {
-      BEFORE: require("../../assets/videos/During a Flood.mp4"),
-      DURING: require("../../assets/videos/During a Flood.mp4"),
-      AFTER: require("../../assets/videos/After a Flood.mp4"),
+      BEFORE: "gs://alerto-videos.firebasestorage.app/Before a Flood.mp4",
+      DURING: "gs://alerto-videos.firebasestorage.app/During a Flood.mp4",
+      AFTER: "gs://alerto-videos.firebasestorage.app/After a Flood.mp4",
     },
     steps: [
       {
@@ -186,9 +186,9 @@ const DISASTERS = [
     image: require("../../assets/images/earthquake.png"), 
     bg: "#EFEBE9",
     videos: {
-      BEFORE: require("../../assets/videos/Before an Earthquake.mp4"),
-      DURING: require("../../assets/videos/During an Earthquake.mp4"),
-      AFTER: require("../../assets/videos/After an Earthquake.mp4"),
+      BEFORE: "gs://alerto-videos.firebasestorage.app/Before an Earthquake.mp4",
+      DURING: "gs://alerto-videos.firebasestorage.app/During an Earthquake.mp4",
+      AFTER: "gs://alerto-videos.firebasestorage.app/After an Earthquake.mp4",
     },
     steps: [
       {
@@ -231,9 +231,9 @@ const DISASTERS = [
     image: require("../../assets/images/fire.png"), 
     bg: "#FBE9E7",
     videos: {
-      BEFORE:require("../../assets/videos/Before a Fire.mp4"),
-      DURING: require("../../assets/videos/During a Fire.mp4"),
-      AFTER: require("../../assets/videos/After a Fire.mp4"),
+      BEFORE:"gs//alerto-videos.firebasestorage.app/Before a Fire.mp4",
+      DURING: "gs://alerto-videos.firebasestorage.app/During a Fire.mp4",
+      AFTER:"gs//alerto-videos.firebasestorage.app/After a Fire.mp4",
     },
     steps: [
       {
@@ -708,7 +708,7 @@ export default function PrepGuide() {
                         )}
                         <Video
                           ref={videoRef}
-                          source={currentVideo}
+                          source={{ uri: currentVideo }}
                           style={styles.video}
                           useNativeControls
                           resizeMode={ResizeMode.CONTAIN}

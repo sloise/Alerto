@@ -45,8 +45,7 @@ yarn-error.log*
 # EAS
 .easignore
 
-# Large video files
-assets/videos/
+
 
 # Cloudflare binary
 cloudflared-windows-amd64.exe
