@@ -30,7 +30,6 @@
         "backgroundImage": "./assets/images/siren1.png",
         "monochromeImage": "./assets/images/siren1.png"
       },
-
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
