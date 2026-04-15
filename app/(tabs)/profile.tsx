@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { signOut, updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, Linking, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAccessibility } from '../../components/AccessibilityContext';
 import { auth, db } from '../../firebaseConfig';
 
@@ -545,18 +545,30 @@ export default function Profile() {
                 {/* Main Call Button */}
                 <TouchableOpacity
                   style={styles.emergencyCallButton}
-                  onPress={() => {
-                    Alert.alert(
-                      'Call',
-                      `Calling ${selectedContactForCall.name} at ${selectedContactForCall.phone}…`
-                    );
+                  onPress={async () => {
+                    if (!selectedContactForCall?.phone) {
+                      Alert.alert('Error', 'No phone number available.');
+                      return;
+                    }
+                    // Remove any non-dialable characters (keep digits, '+')
+                    const phone = selectedContactForCall.phone.replace(/[^0-9+]/g, '');
+                    const url = `tel:${phone}`;
+                    try {
+                      const supported = await Linking.canOpenURL(url);
+                      if (supported) {
+                        await Linking.openURL(url);
+                      } else {
+                        Alert.alert('Unsupported', 'This device cannot make phone calls.');
+                      }
+                    } catch (error) {
+                      Alert.alert('Error', 'Could not open the phone dialer.');
+                    }
                     setShowCallModal(false);
                   }}
                 >
                   <Ionicons name="call" size={32} color="#FFF" />
                   <Text style={styles.emergencyCallButtonText}>Call Now</Text>
                 </TouchableOpacity>
-
                 {/* Edit Button */}
                 <TouchableOpacity
                   style={styles.callModalEditButton}

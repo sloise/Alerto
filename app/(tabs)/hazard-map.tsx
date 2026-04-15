@@ -1,12 +1,10 @@
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { collection, getDocs } from "firebase/firestore";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Animated,
   Dimensions,
-  Image,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -19,10 +17,10 @@ import {
 
 import MapView, { Marker, Polygon } from "react-native-maps";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScaledText } from "../ScaledText"; // 👈 ADD THIS IMPORT
 import { useAccessibility } from "../../components/AccessibilityContext";
 import { db } from "../../firebaseConfig";
 import { LocationContext } from "../_layout";
+import { ScaledText } from "../ScaledText";
 
 const { width, height } = Dimensions.get("window");
 
@@ -176,7 +174,6 @@ export default function HazardMap() {
   const [selectedCenter, setSelectedCenter] = useState<EvacuationCenter | null>(null);
   const [loading, setLoading] = useState(true);
   const [infoModal, setInfoModal] = useState(false);
-  const [directionsModal, setDirectionsModal] = useState(false);
   const [mapType, setMapType] = useState<"standard" | "satellite">("standard");
   const [activeTab, setActiveTab] = useState<"hazards" | "centers">("centers");
   const [visibleCity, setVisibleCity] = useState<string | null>(null);
@@ -201,7 +198,7 @@ export default function HazardMap() {
   }, []);
 
   useEffect(() => {
-    if (infoModal || directionsModal) {
+    if (infoModal) {
       Animated.spring(modalScaleAnim, {
         toValue: 1,
         tension: 40,
@@ -215,7 +212,7 @@ export default function HazardMap() {
         useNativeDriver: true,
       }).start();
     }
-  }, [infoModal, directionsModal]);
+  }, [infoModal]);
 
   useEffect(() => {
     if (latitude && longitude) {
@@ -315,16 +312,17 @@ export default function HazardMap() {
     }
   }
 
-  async function openDirections(app: "google" | "apple") {
+  // Opens Google Maps with the user's current location as origin and the
+  // selected evacuation center as the destination.
+  function openDirections() {
     if (!selectedCenter) return;
-    const { latitude: lat, longitude: lng } = selectedCenter;
-    const urls = {
-      google: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`,
-      apple: `maps://?daddr=${lat},${lng}`,
-    };
-    await AsyncStorage.setItem("preferred_map_app", app);
-    Linking.openURL(urls[app]);
-    setDirectionsModal(false);
+    const { latitude: destLat, longitude: destLng } = selectedCenter;
+    const origin =
+      latitude && longitude ? `&origin=${latitude},${longitude}` : "";
+    const url =
+      `https://www.google.com/maps/dir/?api=1${origin}` +
+      `&destination=${destLat},${destLng}&travelmode=driving`;
+    Linking.openURL(url);
   }
 
   const closeInfoModal = () => {
@@ -333,14 +331,6 @@ export default function HazardMap() {
       duration: 200,
       useNativeDriver: true,
     }).start(() => setInfoModal(false));
-  };
-
-  const closeDirectionsModal = () => {
-    Animated.timing(modalScaleAnim, {
-      toValue: 0.8,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => setDirectionsModal(false));
   };
 
   const mapRegion = {
@@ -376,7 +366,6 @@ export default function HazardMap() {
             <View style={styles.headerTop}>
               <View>
                 <ScaledText variant="h2" style={styles.headerTitle}>Disaster Watch</ScaledText>
-                <ScaledText variant="caption" style={styles.headerSub}>Real-time hazard monitoring</ScaledText>
               </View>
             </View>
           </View>
@@ -545,6 +534,52 @@ export default function HazardMap() {
                   </View>
                 )}
 
+                {/* Zoom Controls */}
+                <View style={styles.zoomControls}>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() =>
+                      centerMapRef.current?.animateToRegion(
+                        {
+                          ...mapRegion,
+                          latitudeDelta: mapRegion.latitudeDelta * 0.5,
+                          longitudeDelta: mapRegion.longitudeDelta * 0.5,
+                        },
+                        300
+                      )
+                    }
+                    accessibilityLabel="Zoom in"
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons
+                      name="add"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() =>
+                      centerMapRef.current?.animateToRegion(
+                        {
+                          ...mapRegion,
+                          latitudeDelta: mapRegion.latitudeDelta * 1.5,
+                          longitudeDelta: mapRegion.longitudeDelta * 1.5,
+                        },
+                        300
+                      )
+                    }
+                    accessibilityLabel="Zoom out"
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons
+                      name="remove"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
                 {/* Re-center button */}
                 {latitude && longitude && (
                   <TouchableOpacity
@@ -573,7 +608,7 @@ export default function HazardMap() {
               </View>
 
               {/* Selected Center Card */}
-              {selectedCenter && !infoModal && !directionsModal && (
+              {selectedCenter && !infoModal && (
                 <Animated.View
                   style={[
                     styles.card,
@@ -669,21 +704,10 @@ export default function HazardMap() {
                     )}
                   </View>
 
+                  {/* Get Directions — opens Google Maps directly with user location as origin */}
                   <TouchableOpacity
                     style={styles.dirBtn}
-                    onPress={async () => {
-                      const preferred =
-                        await AsyncStorage.getItem("preferred_map_app");
-                      if (preferred === "google" || preferred === "apple") {
-                        const urls = {
-                          google: `https://www.google.com/maps/dir/?api=1&destination=${selectedCenter.latitude},${selectedCenter.longitude}&travelmode=driving`,
-                          apple: `maps://?daddr=${selectedCenter.latitude},${selectedCenter.longitude}`,
-                        };
-                        Linking.openURL(urls[preferred]);
-                      } else {
-                        setDirectionsModal(true);
-                      }
-                    }}
+                    onPress={openDirections}
                     accessibilityLabel="Get directions to this evacuation center"
                     accessibilityRole="button"
                   >
@@ -807,6 +831,52 @@ export default function HazardMap() {
                   </View>
                 </View>
 
+                {/* Zoom Controls */}
+                <View style={styles.zoomControls}>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() =>
+                      hazardMapRef.current?.animateToRegion(
+                        {
+                          ...mapRegion,
+                          latitudeDelta: mapRegion.latitudeDelta * 0.5,
+                          longitudeDelta: mapRegion.longitudeDelta * 0.5,
+                        },
+                        300
+                      )
+                    }
+                    accessibilityLabel="Zoom in"
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons
+                      name="add"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.zoomBtn}
+                    onPress={() =>
+                      hazardMapRef.current?.animateToRegion(
+                        {
+                          ...mapRegion,
+                          latitudeDelta: mapRegion.latitudeDelta * 1.5,
+                          longitudeDelta: mapRegion.longitudeDelta * 1.5,
+                        },
+                        300
+                      )
+                    }
+                    accessibilityLabel="Zoom out"
+                    accessibilityRole="button"
+                  >
+                    <MaterialIcons
+                      name="remove"
+                      size={22}
+                      color={COLORS.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
                 {/* Re-center button */}
                 {latitude && longitude && (
                   <TouchableOpacity
@@ -837,7 +907,7 @@ export default function HazardMap() {
           )}
 
           {/* Official Sources */}
-          {!infoModal && !directionsModal && (
+          {!infoModal && (
             <View style={styles.sources}>
               <ScaledText variant="h4" style={styles.sourcesTitle}>Official Resources</ScaledText>
               <View style={styles.sourceGrid}>
@@ -847,18 +917,6 @@ export default function HazardMap() {
                     color: COLORS.status.success,
                     icon: "shield-check",
                     url: "https://hazardhunter.georisk.gov.ph/",
-                  },
-                  {
-                    label: "PHIVOLCS",
-                    color: COLORS.hazard.volcano,
-                    icon: "volcano",
-                    url: "https://gisweb.phivolcs.dost.gov.ph/",
-                  },
-                  {
-                    label: "NDRRMC",
-                    color: COLORS.primary,
-                    icon: "alert-circle",
-                    url: "https://ndrrmc.gov.ph/",
                   },
                 ].map((s) => (
                   <TouchableOpacity
@@ -885,7 +943,7 @@ export default function HazardMap() {
           )}
 
           {/* Footer */}
-          {!infoModal && !directionsModal && (
+          {!infoModal && (
             <ScaledText variant="caption" style={styles.footer}>
               Last updated: {new Date().toLocaleTimeString()} • Monitoring active
             </ScaledText>
@@ -977,7 +1035,7 @@ export default function HazardMap() {
                       • Distance from your current location
                     </ScaledText>
                     <ScaledText variant="body" style={styles.bullet}>
-                      • Direct directions to centers via Google or Apple Maps
+                      • Direct directions via Google Maps from your location
                     </ScaledText>
                   </View>
                 </View>
@@ -994,15 +1052,10 @@ export default function HazardMap() {
                     <ScaledText variant="body" style={styles.bullet}>
                       • Quick access to official monitoring agencies
                     </ScaledText>
+                    <ScaledText variant="body" style={styles.bullet}>
+                      • Zoom in and out for detailed map navigation
+                    </ScaledText>
                   </View>
-                </View>
-
-                <View style={styles.section}>
-                  <ScaledText variant="h4" style={styles.sectionTitle}>Emergency Contacts</ScaledText>
-                  <ScaledText variant="body" style={styles.sectionBody}>
-                    In case of emergencies, contact NDRRMC at 1-888-NDRRMC or
-                    visit their website for real-time disaster updates.
-                  </ScaledText>
                 </View>
               </ScrollView>
               <TouchableOpacity
@@ -1011,124 +1064,6 @@ export default function HazardMap() {
               >
                 <ScaledText variant="button" style={styles.modalCloseTxt}>Understood</ScaledText>
               </TouchableOpacity>
-            </Animated.View>
-          </TouchableOpacity>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Directions Modal */}
-      <Modal
-        visible={directionsModal}
-        transparent
-        animationType="none"
-        onRequestClose={closeDirectionsModal}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalContainer}
-        >
-          <TouchableOpacity
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={closeDirectionsModal}
-          >
-            <Animated.View
-              style={[
-                styles.modalBox,
-                styles.dirModalBox,
-                {
-                  transform: [{ scale: modalScaleAnim }],
-                  opacity: modalScaleAnim.interpolate({
-                    inputRange: [0.8, 1],
-                    outputRange: [0, 1],
-                  }),
-                },
-              ]}
-              onStartShouldSetResponder={() => true}
-            >
-              <View style={styles.modalHead}>
-                <ScaledText variant="h3" style={styles.modalTitle}>Get Directions</ScaledText>
-                <TouchableOpacity
-                  onPress={closeDirectionsModal}
-                  accessibilityLabel="Close modal"
-                  accessibilityRole="button"
-                >
-                  <MaterialIcons
-                    name="close"
-                    size={24}
-                    color={COLORS.text.secondary}
-                  />
-                </TouchableOpacity>
-              </View>
-              {selectedCenter && (
-                <View style={styles.dirModalContent}>
-                  <View style={styles.dirModalInfo}>
-                    <View style={styles.dirInfoIcon}>
-                      <MaterialIcons
-                        name="location-city"
-                        size={24}
-                        color={COLORS.primary}
-                      />
-                    </View>
-                    <View style={styles.dirInfoText}>
-                      <ScaledText variant="h4" style={styles.dirModalName}>
-                        {selectedCenter.name}
-                      </ScaledText>
-                      <ScaledText variant="body" style={styles.dirModalAddr}>
-                        {selectedCenter.address}
-                      </ScaledText>
-                      {selectedCenter.distance !== undefined && (
-                        <ScaledText variant="label" style={styles.dirModalDist}>
-                          {selectedCenter.distance.toFixed(2)} km away
-                        </ScaledText>
-                      )}
-                    </View>
-                  </View>
-
-                  <View style={styles.dirDivider} />
-
-                  <ScaledText variant="h4" style={styles.dirChooseTitle}>
-                    Choose Navigation App
-                  </ScaledText>
-                  <View style={styles.mapAppRow}>
-                    <TouchableOpacity
-                      style={styles.mapAppBtn}
-                      onPress={() => openDirections("google")}
-                      accessibilityLabel="Open Google Maps"
-                      accessibilityRole="button"
-                    >
-                      <Image
-                        source={require("../../assets/images/google-map.png")}
-                        style={styles.mapAppImage}
-                        resizeMode="contain"
-                      />
-                      <ScaledText variant="label" style={styles.mapAppLabel}>Google Maps</ScaledText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.mapAppBtn}
-                      onPress={() => openDirections("apple")}
-                      accessibilityLabel="Open Apple Maps"
-                      accessibilityRole="button"
-                    >
-                      <Image
-                        source={require("../../assets/images/apple-map.png")}
-                        style={styles.mapAppImage}
-                        resizeMode="contain"
-                      />
-                      <ScaledText variant="label" style={styles.mapAppLabel}>Apple Maps</ScaledText>
-                    </TouchableOpacity>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.dirCancel}
-                    onPress={closeDirectionsModal}
-                    accessibilityLabel="Cancel"
-                    accessibilityRole="button"
-                  >
-                    <ScaledText variant="body" style={styles.dirCancelTxt}>Cancel</ScaledText>
-                  </TouchableOpacity>
-                </View>
-              )}
             </Animated.View>
           </TouchableOpacity>
         </KeyboardAvoidingView>
@@ -1328,6 +1263,29 @@ const styles = StyleSheet.create({
   legendText: {
     color: COLORS.text.secondary,
   },
+
+  zoomControls: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    gap: 8,
+  },
+  zoomBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+
   recenterBtn: {
     position: "absolute",
     bottom: 12,
@@ -1515,7 +1473,6 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
-  dirModalBox: { maxHeight: height * 0.6 },
   modalHead: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1560,70 +1517,4 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   modalCloseTxt: { color: "#FFF" },
-
-  dirModalContent: { paddingVertical: 14 },
-  dirModalInfo: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: COLORS.background,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 16,
-    gap: 12,
-  },
-  dirInfoIcon: { marginTop: 2 },
-  dirInfoText: { flex: 1 },
-  dirModalName: {
-    color: COLORS.text.primary,
-    marginBottom: 4,
-  },
-  dirModalAddr: {
-    color: COLORS.text.secondary,
-    marginBottom: 4,
-  },
-  dirModalDist: {
-    color: COLORS.primary,
-  },
-  dirDivider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-    marginBottom: 14,
-  },
-  dirChooseTitle: {
-    color: COLORS.text.primary,
-    marginBottom: 12,
-  },
-  mapAppRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 16,
-    paddingHorizontal: 8,
-  },
-  mapAppBtn: {
-    alignItems: "center",
-    gap: 8,
-    flex: 1,
-  },
-  mapAppImage: {
-    width: 65,
-    height: 65,
-    marginBottom: 8,
-  },
-  mapAppLabel: {
-    color: COLORS.text.primary,
-    textAlign: "center",
-  },
-  dirCancel: {
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    marginTop: 8,
-  },
-  dirCancelTxt: {
-    color: COLORS.text.secondary,
-  },
 });

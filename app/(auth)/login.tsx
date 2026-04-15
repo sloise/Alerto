@@ -170,20 +170,7 @@ export default function Login() {
             </TouchableOpacity>
           </Animated.View>
 
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
-          <TouchableOpacity
-            style={[styles.googleBtn, loading && styles.btnDisabled]}
-            onPress={handleGoogleLogin}
-            disabled={!request || loading}
-          >
-            <Text style={styles.googleIcon}>G</Text>
-            <Text style={styles.googleBtnText}>Continue with Google</Text>
-          </TouchableOpacity>
 
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>By continuing, you agree to our </Text>

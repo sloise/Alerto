@@ -8,17 +8,16 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
-  TouchableOpacity, 
+  TouchableOpacity,
   View
 } from "react-native";
-import { ScaledText } from "../ScaledText"; // 👈 ADD THIS IMPORT
 import { GlobalSearchModal } from '../../components/GlobalSearchModal';
 import { useGlobalSearch } from '../../components/useGlobalSearch';
 import { VoiceResult } from '../../components/VoiceRecognition';
 import { auth, db } from '../../firebaseConfig';
-import { getEarthquakesFromFirestore } from '../../services/earthquakeService';
-import { getTyphooonsFromFirestore } from '../../services/typhoonService';
 import { LocationContext } from '../_layout';
+import { useAlerts } from '../AlertsContext';
+import { ScaledText } from "../ScaledText";
 
 const QUICK_ACCESS = [
   { id: 1, icon: "siren1.png", label: "Alerts", isImage: true },
@@ -31,17 +30,15 @@ export default function Dashboard() {
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [alerts, setAlerts] = useState<any[]>([]);
   const [filteredAlerts, setFilteredAlerts] = useState<any[]>([]);
   const [voiceResults, setVoiceResults] = useState<VoiceResult[]>([]);
   const [voiceQuery, setVoiceQuery] = useState("");
-  const [loading, setLoading] = useState(true);
   const { location, latitude, longitude } = useContext(LocationContext);
   const [nearestCenters, setNearestCenters] = useState<any[]>([]);
   const [userName, setUserName] = useState('User');
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  // Import global search hook
+  const { topAlerts, loading } = useAlerts();
   const { performGlobalSearch, isLocationEnabled } = useGlobalSearch();
 
   useEffect(() => {
@@ -88,45 +85,6 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    async function loadAlerts() {
-      try {
-        const earthquakes = await getEarthquakesFromFirestore();
-        const typhoons = await getTyphooonsFromFirestore();
-
-        const earthquakeAlerts = earthquakes.map((eq: any) => ({
-          id: eq.id,
-          type: "earthquake",
-          level: `M ${eq.magnitude}`,
-          title: eq.title,
-          desc: `Depth: ${eq.depth} km • ${eq.location}`,
-          time: new Date(eq.timestamp).toLocaleDateString(),
-          color: eq.magnitude >= 5 ? "#E8802F" : "#E8802F",
-        }));
-
-        const typhoonAlerts = typhoons.map((ty: any) => ({
-          id: ty.id,
-          type: "typhoon",
-          level: ty.severity?.toUpperCase() || "ADVISORY",
-          title: ty.title,
-          desc: ty.description,
-          time: new Date(ty.timestamp).toLocaleDateString(),
-          color: "#E8802F",
-        }));
-
-        const allAlerts = [...typhoonAlerts, ...earthquakeAlerts];
-        setAlerts(allAlerts);
-        setFilteredAlerts(allAlerts);
-      } catch (error) {
-        console.log("❌ Error loading alerts:", error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadAlerts();
-  }, []);
-
-  useEffect(() => {
     async function loadNearestCenters() {
       try {
         const snapshot = await getDocs(collection(db, "evacuation_centers"));
@@ -149,71 +107,129 @@ export default function Dashboard() {
     loadNearestCenters();
   }, [latitude, longitude]);
 
-  // Handle voice results from modal
-  const handleVoiceResults = (query: string, results: VoiceResult[] | undefined) => {
-    setVoiceQuery(query);
-    if (results && results.length > 0) {
-      setVoiceResults(results);
-    }
-    setModalVisible(false);
+  const detectDisasterType = (query: string): string | null => {
+    const lowerQuery = query.toLowerCase();
+    if (lowerQuery.includes("flood")) return "flood";
+    if (lowerQuery.includes("typhoon")) return "typhoon";
+    if (lowerQuery.includes("fire")) return "fire";
+    if (lowerQuery.includes("earthquake")) return "earthquake";
+    return null;
   };
 
-  // Handle search with global search functionality
+  const filterAlertsByDisasterType = (disasterType: string, alertsToFilter: any[]): any[] => {
+    if (disasterType === "typhoon") {
+      return alertsToFilter.filter(alert => alert.type === "typhoon");
+    } else if (disasterType === "earthquake") {
+      return alertsToFilter.filter(alert => alert.type === "earthquake");
+    } else if (disasterType === "flood") {
+      return alertsToFilter.filter(alert => 
+        alert.title.toLowerCase().includes("flood") || 
+        alert.desc.toLowerCase().includes("flood")
+      );
+    } else if (disasterType === "fire") {
+      return alertsToFilter.filter(alert => 
+        alert.title.toLowerCase().includes("fire") || 
+        alert.desc.toLowerCase().includes("fire")
+      );
+    }
+    return [];
+  };
+
+const handleVoiceResults = (query: string, results: VoiceResult[] | undefined) => {
+  setVoiceQuery(query);
+  setSearchQuery(query);
+  setModalVisible(false);
+
+  // Check result type first for direct navigation
+  if (results && results.length > 0) {
+    const firstResult = results[0];
+
+    // Redirect to hotlines page
+    if (firstResult.type === 'hotline') {
+      router.push("/hotlines");
+      return;
+    }
+
+    // Redirect to hazard map for evacuation centers
+    if (firstResult.type === 'center') {
+      router.push("/hazard-map");
+      return;
+    }
+
+    // For alerts (typhoon, flood, earthquake, fire) — show in dashboard
+    if (firstResult.type === 'alert') {
+      const disasterType = detectDisasterType(query);
+      if (disasterType) {
+        const filtered = filterAlertsByDisasterType(disasterType, topAlerts);
+        setFilteredAlerts(filtered);
+        setVoiceResults(results);
+      } else {
+        setVoiceResults(results);
+      }
+      return;
+    }
+
+    // Checklist
+    if (firstResult.type === 'checklist') {
+      router.push("/prep-guide");
+      return;
+    }
+  }
+
+  // Fallback: try disaster type detection from query string
+  const disasterType = detectDisasterType(query);
+  if (disasterType) {
+    const filtered = filterAlertsByDisasterType(disasterType, topAlerts);
+    setFilteredAlerts(filtered);
+    if (filtered.length === 0) {
+      Alert.alert("No Results", `No ${disasterType} alerts found`);
+    }
+    return;
+  }
+
+  // Generic fallback
+  if (results && results.length > 0) {
+    setVoiceResults(results);
+  }
+};
+
   const performSearch = (query: string) => {
-    const searchConfig = performGlobalSearch(query);
     const lowerQuery = query.toLowerCase();
     setSearchQuery(query);
     setVoiceResults([]);
     setVoiceQuery("");
     
-    let filtered = [...alerts];
-    
-    // Apply filters based on search config
-    if (searchConfig.filters.isTyphoon) {
-      filtered = alerts.filter(alert => alert.type === "typhoon");
-    } 
-    else if (searchConfig.filters.isEarthquake) {
-      filtered = alerts.filter(alert => alert.type === "earthquake");
-    }
-    else if (searchConfig.filters.isFlood) {
-      filtered = alerts.filter(alert => 
-        alert.title.toLowerCase().includes("flood") || 
-        alert.desc.toLowerCase().includes("flood")
-      );
-    }
-    else if (searchConfig.filters.isFire) {
-      filtered = alerts.filter(alert => 
-        alert.title.toLowerCase().includes("fire") || 
-        alert.desc.toLowerCase().includes("fire")
-      );
-    }
-    else if (searchConfig.filters.isEvacuation) {
-      router.push("/hazard-map");
+    const disasterType = detectDisasterType(query);
+    if (disasterType) {
+      const filtered = filterAlertsByDisasterType(disasterType, topAlerts);
+      setFilteredAlerts(filtered);
+      if (filtered.length === 0) {
+        Alert.alert("No Results", `No ${disasterType} alerts found`);
+      } else {
+        Alert.alert("Search Results", `Found ${filtered.length} ${disasterType} alert(s)`);
+      }
       setModalVisible(false);
+      setTimeout(() => { router.push("/alerts"); }, 500);
       return;
-    }
-    else if (searchConfig.filters.isCustom) {
-      filtered = alerts.filter(alert => 
+    } else {
+      const filtered = topAlerts.filter(alert => 
         alert.title.toLowerCase().includes(lowerQuery) ||
         alert.desc.toLowerCase().includes(lowerQuery) ||
         alert.type.toLowerCase().includes(lowerQuery)
       );
+      setFilteredAlerts(filtered);
+      if (filtered.length === 0 && lowerQuery !== "") {
+        Alert.alert("No Results", `No alerts found for "${query}"`);
+      } else if (filtered.length > 0 && lowerQuery !== "") {
+        Alert.alert("Search Results", `Found ${filtered.length} alert(s) for "${query}"`);
+      }
     }
-    
-    setFilteredAlerts(filtered);
-    
-    if (filtered.length === 0 && lowerQuery !== "") {
-      Alert.alert("No Results", `No alerts found for "${query}"`);
-    } else if (filtered.length > 0 && lowerQuery !== "") {
-      Alert.alert("Search Results", `Found ${filtered.length} alert(s) for "${query}"`);
-    }
-    
     setModalVisible(false);
   };
 
   const clearSearch = () => {
     setSearchQuery("");
-    setFilteredAlerts(alerts);
+    setFilteredAlerts([]);
   };
 
   const clearVoiceResults = () => {
@@ -229,8 +245,7 @@ export default function Dashboard() {
     } else if (result.type === 'center') {
       router.push("/hazard-map");
     } else if (result.type === 'alert') {
-      // Filter to show this specific alert
-      const filtered = alerts.filter(a => a.id === result.id);
+      const filtered = topAlerts.filter(a => a.id === result.id);
       setFilteredAlerts(filtered);
       setVoiceResults([]);
       setVoiceQuery("");
@@ -242,14 +257,13 @@ export default function Dashboard() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.searchBar} onPress={() => setModalVisible(true)}>
-<ScaledText style={[searchQuery ? styles.searchTxt : styles.searchPlaceholder, { fontSize: 14 }]}>
-
+            <ScaledText style={[searchQuery ? styles.searchTxt : styles.searchPlaceholder, { fontSize: 14 }]}>
               {searchQuery || "Search alerts..."}
             </ScaledText>
           </TouchableOpacity>
           {searchQuery ? (
             <TouchableOpacity style={[styles.searchBtn, { backgroundColor: "#666" }]} onPress={clearSearch}>
-<ScaledText style={[styles.searchBtnIcon, { fontSize: 18 }]}>✕</ScaledText>
+              <ScaledText style={[styles.searchBtnIcon, { fontSize: 18 }]}>✕</ScaledText>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.searchBtn} onPress={() => setModalVisible(true)}>
@@ -268,7 +282,7 @@ export default function Dashboard() {
           <ScaledText variant="label" style={styles.timeDisplay}>{formatTime(currentDate)}</ScaledText>
           <TouchableOpacity style={styles.alertPill}>
             <ScaledText variant="label" style={styles.alertPillTxt}>
-              {alerts.length > 0 ? alerts[0].title : "No active alerts"}
+              {topAlerts.length > 0 ? topAlerts[0].title : "No active alerts"}
             </ScaledText>
             <ScaledText variant="label" style={styles.alertPillArrow}>›</ScaledText>
           </TouchableOpacity>
@@ -343,8 +357,8 @@ export default function Dashboard() {
                     style={styles.centerCard}
                     onPress={() => handleVoiceResultTap(result)}
                   >
-                    <View style={styles.centerIcon}>
-<ScaledText style={{ fontSize: 20 }}>{result.icon}</ScaledText>
+                    <View style={styles.centerIconWrap}>
+                      <MaterialIcons name="location-city" size={20} color="#D62828" />
                     </View>
                     <View style={{ flex: 1 }}>
                       <ScaledText variant="body" style={styles.centerName}>{result.title}</ScaledText>
@@ -354,14 +368,13 @@ export default function Dashboard() {
                   </TouchableOpacity>
                 );
               } else {
-                // Hotline or Checklist
                 return (
                   <TouchableOpacity 
                     key={idx} 
                     style={[styles.actionCard]}
                     onPress={() => handleVoiceResultTap(result)}
                   >
-<ScaledText style={[styles.actionIcon, { fontSize: 28 }]}>{result.icon}</ScaledText>
+                    <ScaledText style={[styles.actionIcon, { fontSize: 28 }]}>{result.icon}</ScaledText>
                     <View style={{ flex: 1 }}>
                       <ScaledText variant="body" style={styles.actionTitle}>{result.title}</ScaledText>
                       <ScaledText variant="caption" style={styles.actionDesc}>{result.desc}</ScaledText>
@@ -387,12 +400,14 @@ export default function Dashboard() {
 
         {loading ? (
           <ScaledText variant="body" style={{ color: "#888", marginBottom: 12 }}>Loading alerts...</ScaledText>
-        ) : filteredAlerts.length === 0 ? (
+        ) : filteredAlerts.length === 0 && searchQuery ? (
           <ScaledText variant="body" style={{ color: "#888", marginBottom: 12 }}>
-            {searchQuery ? `No alerts found for "${searchQuery}"` : "No active alerts"}
+            No alerts found for "{searchQuery}"
           </ScaledText>
+        ) : topAlerts.length === 0 && !searchQuery ? (
+          <ScaledText variant="body" style={{ color: "#888", marginBottom: 12 }}>No active alerts</ScaledText>
         ) : (
-          filteredAlerts.slice(0, 5).map((a) => (
+          (searchQuery ? filteredAlerts : topAlerts).map((a) => (
             <TouchableOpacity key={a.id} style={[styles.alertCard, { backgroundColor: a.color }]}>
               <View style={styles.alertTop}>
                 <View style={styles.levelBadge}><ScaledText variant="label" style={styles.levelTxt}>{a.level}</ScaledText></View>
@@ -410,30 +425,32 @@ export default function Dashboard() {
             <ScaledText variant="label" style={styles.seeAll}>View all</ScaledText>
           </TouchableOpacity>
         </View>
+
         {nearestCenters.map((c) => (
           <TouchableOpacity key={c.id} style={styles.centerCard} onPress={() => router.push("/hazard-map")}>
-<ScaledText style={{ fontSize: 20 }}>🏫</ScaledText>
+            {/* location-city icon — same as hazard map markers */}
+            <View style={styles.centerIconWrap}>
+              <MaterialIcons name="location-city" size={20} color="#D62828" />
+            </View>
             <View style={{ flex: 1 }}>
               <ScaledText variant="body" style={styles.centerName}>{c.name}</ScaledText>
               <ScaledText variant="caption" style={styles.centerType}>{c.type || "Evacuation Center"}</ScaledText>
             </View>
             <View style={{ alignItems: "flex-end" }}>
               <ScaledText variant="label" style={styles.centerDist}>{c.distance ? `${c.distance.toFixed(1)} km` : "—"}</ScaledText>
-              <View style={styles.centerDot} />
-              <ScaledText variant="caption" style={styles.centerStatus}>Open</ScaledText>
             </View>
           </TouchableOpacity>
         ))}
+
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* Global Search Modal */}
       <GlobalSearchModal 
         visible={modalVisible} 
         onClose={() => setModalVisible(false)} 
         onSearch={performSearch}
         onVoiceResults={handleVoiceResults}
-        allAlerts={alerts}
+        allAlerts={topAlerts}
         nearestCenters={nearestCenters}
       />
     </SafeAreaView>
@@ -475,23 +492,12 @@ const styles = StyleSheet.create({
   alertTitle: { color: "#FFF", marginBottom: 6 },
   alertDesc: { color: "rgba(255,255,255,0.9)", lineHeight: 19 },
   centerCard: { backgroundColor: "#F5F5F5", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10, borderWidth: 1, borderColor: "#E8E8E8" },
-  centerIcon: { width: 40, height: 40, backgroundColor: "#E8E8E8", borderRadius: 8, alignItems: "center", justifyContent: "center", marginRight: 12 },
+  centerIconWrap: { width: 40, height: 40, backgroundColor: "rgba(214,40,40,0.1)", borderRadius: 10, alignItems: "center", justifyContent: "center", marginRight: 12 },
   centerName: { color: "#0D0D0D", marginBottom: 2 },
   centerType: { color: "#888" },
   centerDist: { color: "#D62828" },
   centerDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#2ECC71", marginVertical: 2 },
-  centerStatus: { color: "#2ECC71" },
-  
-  actionCard: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    backgroundColor: "#FFF", 
-    borderRadius: 12, 
-    padding: 14, 
-    marginBottom: 10, 
-    borderWidth: 1, 
-    borderColor: "#E8E8E8" 
-  },
+  actionCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFF", borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#E8E8E8" },
   actionIcon: { marginRight: 12 },
   actionTitle: { color: "#0D0D0D", marginBottom: 2 },
   actionDesc: { color: "#888" },

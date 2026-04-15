@@ -223,30 +223,6 @@ export default function Signup() {
             </TouchableOpacity>
           </Animated.View>
 
-          {/* Divider */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Or continue with</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* Social buttons */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity 
-              style={styles.socialBtn} 
-              activeOpacity={0.7}
-              onPress={() => Alert.alert("Coming Soon", "Google sign-in will be available soon!")}
-            >
-              <Text style={styles.socialIcon}>G</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.socialBtn} 
-              activeOpacity={0.7}
-              onPress={() => Alert.alert("Coming Soon", "Facebook sign-in will be available soon!")}
-            >
-              <Text style={styles.socialIcon}>f</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Login link */}
           <View style={styles.switchRow}>
@@ -356,27 +332,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
-  // Social
-  socialRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginBottom: 36,
-  },
-  socialBtn: {
-    width: 56,
-    height: 48,
-    borderWidth: 1.5,
-    borderColor: "#E0E0E0",
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FAFAFA",
-  },
-  socialIcon: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#333333",
-  },
 
   // Terms row (checkbox + link)
   termsRow: {

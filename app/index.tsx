@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     height: 140,
+    width:"100%"
   },
   textRow: {
     flexDirection: "row",

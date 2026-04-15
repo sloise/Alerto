@@ -231,9 +231,9 @@ const DISASTERS = [
     image: require("../../assets/images/fire.png"), 
     bg: "#FBE9E7",
     videos: {
-      BEFORE: null,
-      DURING: null,
-      AFTER: null,
+      BEFORE:require("../../assets/videos/Before a Fire.mp4"),
+      DURING: require("../../assets/videos/During a Fire.mp4"),
+      AFTER: require("../../assets/videos/After a Fire.mp4"),
     },
     steps: [
       {
@@ -543,7 +543,7 @@ export default function PrepGuide() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         {/* 👈 CHANGED TO ScaledText */}
-        <ScaledText variant="h1" style={styles.headerTitle}>Prep Guide</ScaledText>
+        <ScaledText variant="h1" style={styles.headerTitle}>Safety Guide</ScaledText>
         <ScaledText variant="caption" style={styles.headerSubtitle}>Be prepared, stay safe</ScaledText>
       </View>
 
@@ -560,7 +560,7 @@ export default function PrepGuide() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tipsRow}
         >
-          {["📢 Stay Informed", "📦 Pack Early", "🏃 Know Routes", "👥 Help Others"].map(
+          {["Stay Informed", "Pack Early", "Know Routes", "Help Others"].map(
             (tip) => (
               <View key={tip} style={styles.tipChip}>
                 {/* 👈 CHANGED TO ScaledText */}
@@ -589,7 +589,7 @@ export default function PrepGuide() {
               <View style={styles.iconContainer}>
                 <RNImage
                   source={d.image}
-                  style={[styles.customIcon, { tintColor: d.iconColor }]}
+                  style={styles.customIcon}
                   resizeMode="contain"
                 />
               </View>
@@ -623,7 +623,7 @@ export default function PrepGuide() {
               <View style={styles.modalIconContainer}>
                 <RNImage
                   source={selected.image}
-                  style={[styles.modalCustomIcon, { tintColor: selected.iconColor }]}
+                    style={styles.modalCustomIcon}
                   resizeMode="contain"
                 />
               </View>

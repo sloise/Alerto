@@ -45,7 +45,7 @@ export default function RootLayout() {
 
   // Navigation logic – only handle auth redirects.
   // Terms acceptance is already handled by the splash screen.
- useEffect(() => {
+ /*useEffect(() => {
     if (loading) return;
 
     // DELAY THE REDIRECT CHECK
@@ -65,6 +65,7 @@ export default function RootLayout() {
 
     return () => clearTimeout(timer);
   }, [user, loading, segments]);
+  */
 
   // Fetch initial data only once
   useEffect(() => {

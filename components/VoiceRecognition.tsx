@@ -123,21 +123,35 @@ export function VoiceRecognition({
     pulseAnim.setValue(1);
   }
 
-  function recognizeKeyword(spoken: string): string | null {
-    const lower = spoken.toLowerCase().trim();
-    if (Object.keys(HOTLINE_KEYWORDS).some(k => lower.includes(k))) return 'emergency hotlines';
-    if (Object.keys(CHECKLIST_KEYWORDS).some(k => lower.includes(k))) return 'go-bag checklist';
-    if (Object.keys(EVACUATION_KEYWORDS).some(k => lower.includes(k))) return 'evacuation centers';
-    for (const [keyword, type] of Object.entries(ALERT_TYPE_KEYWORDS)) {
-      if (lower.includes(keyword)) return type;
-    }
-    return null;
+function recognizeKeyword(spoken: string): string | null {
+  const lower = spoken.toLowerCase().trim();
+
+  // Hotlines
+  if (Object.keys(HOTLINE_KEYWORDS).some(k => lower.includes(k))) 
+    return 'emergency hotlines';
+
+  // Checklist
+  if (Object.keys(CHECKLIST_KEYWORDS).some(k => lower.includes(k))) 
+    return 'go-bag checklist';
+
+  // Evacuation / centers
+  if (Object.keys(EVACUATION_KEYWORDS).some(k => lower.includes(k))) 
+    return 'evacuation centers';
+
+  // Disaster alert types — check these LAST so "evacuation" doesn't false-match "fire"
+  for (const [keyword, type] of Object.entries(ALERT_TYPE_KEYWORDS)) {
+    if (lower.includes(keyword)) return type;
   }
+
+  return null;
+}
 
   function getResultsForKeyword(keyword: string): VoiceResult[] {
     const results: VoiceResult[] = [];
-    if (keyword === 'emergency hotlines') { results.push(HOTLINE_KEYWORDS['emergency hotlines']); return results; }
-    if (keyword === 'go-bag checklist') { results.push(CHECKLIST_KEYWORDS['go-bag checklist']); return results; }
+if (keyword === 'emergency hotlines') { 
+  results.push({ ...HOTLINE_KEYWORDS['emergency hotlines'] }); 
+  return results; 
+}    if (keyword === 'go-bag checklist') { results.push(CHECKLIST_KEYWORDS['go-bag checklist']); return results; }
     if (keyword === 'evacuation centers') {
       results.push(EVACUATION_KEYWORDS['evacuation centers']);
       nearestCenters.slice(0, 2).forEach(center => {
